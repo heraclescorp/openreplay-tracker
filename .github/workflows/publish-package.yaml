@@ -16,7 +16,6 @@ jobs:
         with:
           always-auth: true
           registry-url: "https://npm.pkg.github.com"
-          scope: "@heraclescorp"
       - run: yarn install --frozen-lockfile
       - run: yarn build
       - run: yarn publish
