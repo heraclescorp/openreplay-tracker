@@ -1,5 +1,3 @@
-src
-tsconfig.json
 .prettierrc.json
 .eslintrc.cjs
 build
