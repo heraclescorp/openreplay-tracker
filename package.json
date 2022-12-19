@@ -13,10 +13,6 @@
   "license": "MIT",
   "type": "module",
   "main": "./lib/index.js",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/heraclescorp/openreplay-tracker.git"
-  },
   "scripts": {
     "lint": "eslint src --ext .ts,.js --fix --quiet",
     "clean": "rm -Rf build && rm -Rf lib && rm -Rf cjs",
