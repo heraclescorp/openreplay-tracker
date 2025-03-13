@@ -37,7 +37,7 @@ type Failure = {
 
 type ForceFlushCompleted = {
   type: 'force_flush_completed'
-  timedOut?: boolean
+  success: boolean
 }
 
 export type FromWorkerData =
