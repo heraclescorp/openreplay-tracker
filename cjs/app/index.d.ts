@@ -5,10 +5,12 @@ import Sanitizer from './sanitizer.js';
 import Ticker from './ticker.js';
 import Logger from './logger.js';
 import Session from './session.js';
+import AttributeSender from '../modules/attributeSender.js';
 import type { Options as ObserverOptions } from './observer/top_observer.js';
 import type { Options as SanitizerOptions } from './sanitizer.js';
 import type { Options as LoggerOptions } from './logger.js';
 import type { Options as SessOptions } from './session.js';
+import type { Options as NetworkOptions } from '../modules/network.js';
 import type { Options as WebworkerOptions } from '../common/interaction.js';
 export interface StartOptions {
     userID?: string;
@@ -22,24 +24,25 @@ interface OnStartInfo {
     userUUID: string;
 }
 declare const CANCELED: "canceled";
-declare type SuccessfulStart = OnStartInfo & {
+type SuccessfulStart = OnStartInfo & {
     success: true;
 };
-declare type UnsuccessfulStart = {
+type UnsuccessfulStart = {
     reason: typeof CANCELED | string;
     success: false;
 };
 declare const UnsuccessfulStart: (reason: string) => UnsuccessfulStart;
 declare const SuccessfulStart: (body: OnStartInfo) => SuccessfulStart;
-export declare type StartPromiseReturn = SuccessfulStart | UnsuccessfulStart;
-declare type StartCallback = (i: OnStartInfo) => void;
-declare type CommitCallback = (messages: Array<Message>) => void;
-declare type AppOptions = {
+export type StartPromiseReturn = SuccessfulStart | UnsuccessfulStart;
+type StartCallback = (i: OnStartInfo) => void;
+type CommitCallback = (messages: Array<Message>) => void;
+type AppOptions = {
     revID: string;
     node_id: string;
     session_reset_key: string;
     session_token_key: string;
     session_pageno_key: string;
+    session_tabid_key: string;
     local_uuid_key: string;
     ingestPoint: string;
     resourceBaseHref: string | null;
@@ -49,9 +52,12 @@ declare type AppOptions = {
     __debug__?: LoggerOptions;
     localStorage: Storage | null;
     sessionStorage: Storage | null;
+    forceSingleTab?: boolean;
+    disableStringDict?: boolean;
     onStart?: StartCallback;
+    network?: NetworkOptions;
 } & WebworkerOptions & SessOptions;
-export declare type Options = AppOptions & ObserverOptions & SanitizerOptions;
+export type Options = AppOptions & ObserverOptions & SanitizerOptions;
 export declare const DEFAULT_INGEST_POINT = "https://api.openreplay.com/ingest";
 export default class App {
     readonly nodes: Nodes;
@@ -68,13 +74,20 @@ export default class App {
     private readonly startCallbacks;
     private readonly stopCallbacks;
     private readonly commitCallbacks;
-    private readonly options;
+    readonly options: AppOptions;
+    readonly networkOptions?: NetworkOptions;
     private readonly revID;
     private activityState;
     private readonly version;
     private readonly worker?;
+    private compressionThreshold;
+    private restartAttempts;
+    private readonly bc;
+    private readonly contextId;
+    attributeSender: AttributeSender;
     constructor(projectKey: string, sessionToken: string | undefined, options: Partial<Options>);
     private _debug;
+    private _usingOldFetchPlugin;
     send(message: Message, urgent?: boolean): void;
     private commit;
     private delay;
@@ -100,7 +113,9 @@ export default class App {
     };
     getSessionToken(): string | undefined;
     getSessionID(): string | undefined;
-    getSessionURL(): string | undefined;
+    getSessionURL(options?: {
+        withCurrentTime?: boolean;
+    }): string | undefined;
     getHost(): string;
     getProjectKey(): string;
     getBaseHref(): string;
@@ -109,7 +124,13 @@ export default class App {
     active(): boolean;
     resetNextPageSession(flag: boolean): void;
     private _start;
+    /**
+     * basically we ask other tabs during constructor
+     * and here we just apply 10ms delay just in case
+     * */
     start(...args: Parameters<App['_start']>): Promise<StartPromiseReturn>;
+    forceFlushBatch(): void;
+    getTabId(): string;
     stop(stopWorker?: boolean): void;
 }
 export {};

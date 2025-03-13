@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.hasOpenreplayAttribute = exports.getLabelAttribute = exports.deprecationWarn = exports.DOCS_HOST = exports.isURL = exports.normSpaces = exports.stars = exports.now = exports.getTimeOrigin = exports.adjustTimeOrigin = exports.MAX_STR_LEN = exports.IS_FIREFOX = exports.IN_BROWSER = void 0;
+exports.inIframe = exports.generateRandomId = exports.canAccessIframe = exports.hasOpenreplayAttribute = exports.getLabelAttribute = exports.deprecationWarn = exports.DOCS_HOST = exports.isURL = exports.normSpaces = exports.stars = exports.now = exports.getTimeOrigin = exports.adjustTimeOrigin = exports.MAX_STR_LEN = exports.IS_FIREFOX = exports.IN_BROWSER = void 0;
 const DEPRECATED_ATTRS = { htmlmasked: 'hidden', masked: 'obscured' };
 exports.IN_BROWSER = !(typeof window === 'undefined');
 exports.IS_FIREFOX = exports.IN_BROWSER && navigator.userAgent.match(/firefox|fxios/i);
@@ -69,3 +69,36 @@ function hasOpenreplayAttribute(e, attr) {
     return false;
 }
 exports.hasOpenreplayAttribute = hasOpenreplayAttribute;
+/**
+ * checks if iframe is accessible
+ **/
+function canAccessIframe(iframe) {
+    try {
+        return Boolean(iframe.contentDocument);
+    }
+    catch (e) {
+        return false;
+    }
+}
+exports.canAccessIframe = canAccessIframe;
+function dec2hex(dec) {
+    return dec.toString(16).padStart(2, '0');
+}
+function generateRandomId(len) {
+    const arr = new Uint8Array((len || 40) / 2);
+    // msCrypto = IE11
+    // @ts-ignore
+    const safeCrypto = window.crypto || window.msCrypto;
+    safeCrypto.getRandomValues(arr);
+    return Array.from(arr, dec2hex).join('');
+}
+exports.generateRandomId = generateRandomId;
+function inIframe() {
+    try {
+        return window.self !== window.top;
+    }
+    catch (e) {
+        return true;
+    }
+}
+exports.inIframe = inIframe;

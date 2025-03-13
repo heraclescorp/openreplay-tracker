@@ -4,6 +4,7 @@ class Nodes {
     constructor(node_id) {
         this.node_id = node_id;
         this.nodes = [];
+        this.totalNodeAmount = 0;
         this.nodeCallbacks = [];
         this.elementListeners = new Map();
     }
@@ -28,6 +29,7 @@ class Nodes {
         let id = node[this.node_id];
         const isNew = id === undefined;
         if (isNew) {
+            this.totalNodeAmount++;
             id = this.nodes.length;
             this.nodes[id] = node;
             node[this.node_id] = id;
@@ -44,6 +46,7 @@ class Nodes {
                 this.elementListeners.delete(id);
                 listeners.forEach((listener) => node.removeEventListener(listener[0], listener[1], listener[2]));
             }
+            this.totalNodeAmount--;
         }
         return id;
     }
@@ -63,15 +66,20 @@ class Nodes {
         this.nodeCallbacks.forEach((cb) => cb(node, isStart));
     }
     getID(node) {
+        if (!node)
+            return undefined;
         return node[this.node_id];
     }
     getNode(id) {
         return this.nodes[id];
     }
+    getNodeCount() {
+        return this.totalNodeAmount;
+    }
     clear() {
         for (let id = 0; id < this.nodes.length; id++) {
             const node = this.nodes[id];
-            if (node === undefined) {
+            if (!node) {
                 continue;
             }
             this.unregisterNode(node);

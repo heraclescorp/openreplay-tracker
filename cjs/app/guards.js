@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.hasTag = exports.isRootNode = exports.isDocument = exports.isTextNode = exports.isElementNode = exports.isSVGElement = exports.isNode = void 0;
+exports.hasTag = exports.isRootNode = exports.isDocument = exports.isTextNode = exports.isCommentNode = exports.isElementNode = exports.isSVGElement = exports.isNode = void 0;
 //@ts-ignore
 function isNode(sth) {
     return !!sth && sth.nodeType != null;
@@ -14,6 +14,10 @@ function isElementNode(node) {
     return node.nodeType === Node.ELEMENT_NODE;
 }
 exports.isElementNode = isElementNode;
+function isCommentNode(node) {
+    return node.nodeType === Node.COMMENT_NODE;
+}
+exports.isCommentNode = isCommentNode;
 function isTextNode(node) {
     return node.nodeType === Node.TEXT_NODE;
 }
@@ -27,6 +31,7 @@ function isRootNode(node) {
 }
 exports.isRootNode = isRootNode;
 function hasTag(el, tagName) {
-    return el.nodeName === tagName;
+    // @ts-ignore
+    return el.localName === tagName;
 }
 exports.hasTag = hasTag;

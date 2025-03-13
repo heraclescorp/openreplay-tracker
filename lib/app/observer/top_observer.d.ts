@@ -4,8 +4,8 @@ import App from '../index.js';
 export interface Options {
     captureIFrames: boolean;
 }
-declare type Context = Window & typeof globalThis;
-declare type ContextCallback = (context: Context) => void;
+type Context = Window & typeof globalThis;
+type ContextCallback = (context: Context) => void;
 export default class TopObserver extends Observer {
     private readonly options;
     private readonly iframeOffsets;

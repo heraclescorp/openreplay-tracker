@@ -22,7 +22,7 @@ class TopObserver extends observer_js_1.default {
         }, options);
         // IFrames
         this.app.nodes.attachNodeCallback((node) => {
-            if ((0, guards_js_1.hasTag)(node, 'IFRAME') &&
+            if ((0, guards_js_1.hasTag)(node, 'iframe') &&
                 ((this.options.captureIFrames && !(0, utils_js_1.hasOpenreplayAttribute)(node, 'obscured')) ||
                     (0, utils_js_1.hasOpenreplayAttribute)(node, 'capture'))) {
                 this.handleIframe(node);
@@ -51,6 +51,8 @@ class TopObserver extends observer_js_1.default {
                 //log
                 return;
             }
+            if (!(0, utils_js_1.canAccessIframe)(iframe))
+                return;
             const currentWin = iframe.contentWindow;
             const currentDoc = iframe.contentDocument;
             if (currentDoc && currentDoc !== doc) {
@@ -70,7 +72,8 @@ class TopObserver extends observer_js_1.default {
                 //@ts-ignore https://github.com/microsoft/TypeScript/issues/41684
                 this.contextCallbacks.forEach((cb) => cb(currentWin));
             }
-        }, 0));
+            // we need this delay because few iframes stacked one in another with rapid updates will break the player (or browser engine rather?)
+        }, 100));
         iframe.addEventListener('load', handle); // why app.attachEventListener not working?
         handle();
     }

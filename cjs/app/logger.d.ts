@@ -5,8 +5,8 @@ export declare const LogLevel: {
     readonly Errors: 2;
     readonly Silent: 0;
 };
-declare type LogLevel = typeof LogLevel[keyof typeof LogLevel];
-declare type CustomLevel = {
+type LogLevel = typeof LogLevel[keyof typeof LogLevel];
+type CustomLevel = {
     error: boolean;
     warn: boolean;
     log: boolean;
@@ -15,7 +15,7 @@ interface _Options {
     level: LogLevel | CustomLevel;
     messages?: number[];
 }
-export declare type Options = true | _Options | LogLevel;
+export type Options = true | _Options | LogLevel;
 export default class Logger {
     private readonly options;
     constructor(options?: Options);

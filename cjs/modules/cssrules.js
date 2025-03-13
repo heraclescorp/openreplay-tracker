@@ -76,7 +76,7 @@ function default_1(app) {
     patchContext(window);
     app.observer.attachContextCallback(patchContext);
     app.nodes.attachNodeCallback((node) => {
-        if (!((0, guards_js_1.hasTag)(node, 'STYLE') || (0, guards_js_1.hasTag)(node, 'style')) || !node.sheet) {
+        if (!(0, guards_js_1.hasTag)(node, 'style') || !node.sheet) {
             return;
         }
         if (node.textContent !== null && node.textContent.trim().length > 0) {

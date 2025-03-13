@@ -17,6 +17,7 @@ export default class BatchWriter {
     private timestamp: number,
     private url: string,
     private readonly onBatch: (batch: Uint8Array) => void,
+    private tabId: string,
   ) {
     this.prepare()
   }
@@ -36,7 +37,7 @@ export default class BatchWriter {
   }
 
   private prepare(): void {
-    if (!this.encoder.isEmpty()) {
+    if (!this.encoder.isEmpty) {
       return
     }
 
@@ -49,8 +50,12 @@ export default class BatchWriter {
       this.timestamp,
       this.url,
     ]
+
+    const tabData: Messages.TabData = [Messages.Type.TabData, this.tabId]
+
     this.writeType(batchMetadata)
     this.writeFields(batchMetadata)
+    this.writeWithSize(tabData as Message)
     this.isEmpty = true
   }
 
@@ -94,26 +99,30 @@ export default class BatchWriter {
     if (this.writeWithSize(message)) {
       return
     }
+    // buffer overflow, send already written data first then try again
     this.finaliseBatch()
-    while (!this.writeWithSize(message)) {
-      if (this.beaconSize === this.beaconSizeLimit) {
-        console.warn('OpenReplay: beacon size overflow. Skipping large message.', message, this)
-        this.encoder.reset()
-        this.prepare()
-        return
-      }
-      // MBTODO: tempWriter for one message?
-      this.beaconSize = Math.min(this.beaconSize * 2, this.beaconSizeLimit)
-      this.encoder = new MessageEncoder(this.beaconSize)
-      this.prepare()
+    if (this.writeWithSize(message)) {
+      return
     }
+    // buffer is too small. Creating one with maximal capacity for this message only
+    this.encoder = new MessageEncoder(this.beaconSizeLimit)
+    this.prepare()
+    if (!this.writeWithSize(message)) {
+      console.warn('OpenReplay: beacon size overflow. Skipping large message.', message, this)
+    } else {
+      this.finaliseBatch()
+    }
+    // reset encoder to normal size
+    this.encoder = new MessageEncoder(this.beaconSize)
+    this.prepare()
   }
 
   finaliseBatch() {
     if (this.isEmpty) {
       return
     }
-    this.onBatch(this.encoder.flush())
+    const batch = this.encoder.flush()
+    this.onBatch(batch)
     this.prepare()
   }
 

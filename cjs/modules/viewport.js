@@ -5,12 +5,14 @@ const messages_gen_js_1 = require("../app/messages.gen.js");
 function default_1(app) {
     let url, width, height;
     let navigationStart;
+    let referrer = document.referrer;
     const sendSetPageLocation = app.safe(() => {
         const { URL } = document;
         if (URL !== url) {
             url = URL;
-            app.send((0, messages_gen_js_1.SetPageLocation)(url, document.referrer, navigationStart));
+            app.send((0, messages_gen_js_1.SetPageLocation)(url, referrer, navigationStart));
             navigationStart = 0;
+            referrer = url;
         }
     });
     const sendSetViewportSize = app.safe(() => {

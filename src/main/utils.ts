@@ -81,3 +81,35 @@ export function hasOpenreplayAttribute(e: Element, attr: string): boolean {
 
   return false
 }
+
+/**
+ * checks if iframe is accessible
+ **/
+export function canAccessIframe(iframe: HTMLIFrameElement) {
+  try {
+    return Boolean(iframe.contentDocument)
+  } catch (e) {
+    return false
+  }
+}
+
+function dec2hex(dec: number) {
+  return dec.toString(16).padStart(2, '0')
+}
+
+export function generateRandomId(len?: number) {
+  const arr: Uint8Array = new Uint8Array((len || 40) / 2)
+  // msCrypto = IE11
+  // @ts-ignore
+  const safeCrypto = window.crypto || window.msCrypto
+  safeCrypto.getRandomValues(arr)
+  return Array.from(arr, dec2hex).join('')
+}
+
+export function inIframe() {
+  try {
+    return window.self !== window.top
+  } catch (e) {
+    return true
+  }
+}

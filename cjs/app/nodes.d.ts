@@ -1,7 +1,8 @@
-declare type NodeCallback = (node: Node, isStart: boolean) => void;
+type NodeCallback = (node: Node, isStart: boolean) => void;
 export default class Nodes {
     private readonly node_id;
     private nodes;
+    private totalNodeAmount;
     private readonly nodeCallbacks;
     private readonly elementListeners;
     constructor(node_id: string);
@@ -13,6 +14,7 @@ export default class Nodes {
     callNodeCallbacks(node: Node, isStart: boolean): void;
     getID(node: Node): number | undefined;
     getNode(id: number): void | Node;
+    getNodeCount(): number;
     clear(): void;
 }
 export {};

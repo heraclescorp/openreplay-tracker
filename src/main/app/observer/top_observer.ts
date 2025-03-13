@@ -1,5 +1,6 @@
 import Observer from './observer.js'
 import { isElementNode, hasTag } from '../guards.js'
+import Network from '../../modules/network.js'
 
 import IFrameObserver from './iframe_observer.js'
 import ShadowRootObserver from './shadow_root_observer.js'
@@ -7,7 +8,7 @@ import IFrameOffsets, { Offset } from './iframe_offsets.js'
 
 import { CreateDocument } from '../messages.gen.js'
 import App from '../index.js'
-import { IN_BROWSER, hasOpenreplayAttribute } from '../../utils.js'
+import { IN_BROWSER, hasOpenreplayAttribute, canAccessIframe } from '../../utils.js'
 
 export interface Options {
   captureIFrames: boolean
@@ -34,7 +35,7 @@ export default class TopObserver extends Observer {
     // IFrames
     this.app.nodes.attachNodeCallback((node) => {
       if (
-        hasTag(node, 'IFRAME') &&
+        hasTag(node, 'iframe') &&
         ((this.options.captureIFrames && !hasOpenreplayAttribute(node, 'obscured')) ||
           hasOpenreplayAttribute(node, 'capture'))
       ) {
@@ -74,6 +75,7 @@ export default class TopObserver extends Observer {
           //log
           return
         }
+        if (!canAccessIframe(iframe)) return
         const currentWin = iframe.contentWindow
         const currentDoc = iframe.contentDocument
         if (currentDoc && currentDoc !== doc) {
@@ -95,7 +97,8 @@ export default class TopObserver extends Observer {
           //@ts-ignore https://github.com/microsoft/TypeScript/issues/41684
           this.contextCallbacks.forEach((cb) => cb(currentWin))
         }
-      }, 0),
+        // we need this delay because few iframes stacked one in another with rapid updates will break the player (or browser engine rather?)
+      }, 100),
     )
     iframe.addEventListener('load', handle) // why app.attachEventListener not working?
     handle()
