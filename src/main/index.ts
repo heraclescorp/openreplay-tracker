@@ -254,18 +254,14 @@ export default class API {
     return this.app.session.getSessionHash()
   }
 
-  forceFlushBatch() {
+  forceFlushBatch(callback?: (timedOut?: boolean) => any) {
     if (this.app === null) {
       return
+    }
+    if (callback) {
+      this.app.attachForceFlushCompletedCallback(callback)
     }
     this.app.forceFlushBatch()
-  }
-
-  onForceFlushCompleted(callback: (timedOut?: boolean) => any): void {
-    if (this.app === null) {
-      return
-    }
-    this.app.attachForceFlushCompletedCallback(callback)
   }
 
   getSessionToken(): string | null | undefined {
