@@ -76,46 +76,56 @@ let sendIntervalID: ReturnType<typeof setInterval> | null = null
 let restartTimeoutID: ReturnType<typeof setTimeout>
 
 // Wait for queued data to be sent over network with potential timeout after 3 seconds by default
-function waitForNetworkCompletion(callback: (timedOut: boolean) => void, retries = 30): void {
+async function waitForNetworkCompletion(retries = 30): Promise<boolean> {
   // If no sender or empty queue, we're already done
   if (!sender || sender['queue'].length === 0) {
-    callback(false)
-    return
+    return true // Success - nothing to wait for
   }
 
   // Keep track of last item in queue
-  const lastItem = sender['queue'][sender['queue'].length - 1]
+  const lastItem = sender['queue'][sender['queue'].length - 1];
 
-  // Function to check if the last item is still in the queue (times out after 3 seconds by default)
-  function checkCompletion(remainingRetries: number): void {
-    // If timeout reached, call callback with timeout flag
-    if (remainingRetries <= 0) {
-      console.warn(
-        'OpenReplay: waitForNetworkCompletion - Network completion timeout reached. Some data may not have been sent.',
-      )
-      callback(true)
-      return
-    }
-
-    // If sender is gone, we're done
+  // Check if the last item is still in the queue until max retries are reached
+  for (let i = 0; i < retries; i++) {
+    // If sender is gone, we are done
     if (!sender) {
-      callback(false)
-      return
+      return true // Success - sender is gone
     }
 
     // Check if the last item is still in the queue
-    const itemStillInQueue = sender['queue'].includes(lastItem)
-    // If the item is no longer in the queue call callback function with false
+    const itemStillInQueue = sender['queue'].includes(lastItem);
     if (!itemStillInQueue) {
-      callback(false)
-      return
+      return true // Success - item is no longer in queue
     }
 
-    // Check again in 100ms
-    setTimeout(() => checkCompletion(remainingRetries - 1), 100)
+    // Wait before next check
+    await new Promise((f) => setTimeout(f, 100));
   }
 
-  checkCompletion(retries)
+  console.warn(
+    'OpenReplay: waitForNetworkCompletion - Network completion timeout reached. Some data may not have been sent.',
+  )
+  return false // Failed - timed out
+}
+
+function postFlushMessageAfterNetworkCompletion(): void {
+  void waitForNetworkCompletion()
+    .then((success) => {
+      postMessage({
+        type: 'force_flush_completed',
+        success,
+      })
+    })
+    .catch((error) => {
+      console.error(
+        'OpenReplay: postFlushMessageAfterNetworkCompletion - Error during network completion.',
+        error,
+      )
+      postMessage({
+        type: 'force_flush_completed',
+        success: false,
+      })
+    })
 }
 
 // @ts-ignore
@@ -131,13 +141,7 @@ self.onmessage = ({ data }: { data: ToWorkerData }): any => {
   }
   if (data === 'forceFlushBatch') {
     finalize()
-    // Wait for all requests to be sent before sending completion message
-    waitForNetworkCompletion((timedOut) => {
-      postMessage({
-        type: 'force_flush_completed',
-        timedOut,
-      })
-    })
+    void postFlushMessageAfterNetworkCompletion()
     return
   }
 

@@ -123,7 +123,7 @@ export default class App {
   private readonly stopCallbacks: Array<() => any> = []
   private readonly commitCallbacks: Array<CommitCallback> = []
   private readonly notInitCallbacks: Array<() => any> = []
-  private readonly forceFlushCompletedCallbacks: Array<(timedOut?: boolean) => any> = []
+  private readonly forceFlushCompletedCallbacks: Array<(success: boolean) => any> = []
   public readonly options: AppOptions
   public readonly networkOptions?: NetworkOptions
   private readonly revID: string
@@ -216,7 +216,7 @@ export default class App {
         } else if (data.type === 'force_flush_completed') {
           this.forceFlushCompletedCallbacks.forEach((cb) => {
             try {
-              cb(data.timedOut)
+              cb(data.success)
             } catch (e) {
               this._debug('force_flush_completed_callback_error', e)
             }
@@ -396,7 +396,7 @@ export default class App {
     this.stopCallbacks.push(cb)
   }
 
-  attachForceFlushCompletedCallback(cb: (timedOut?: boolean) => any, useSafe = false): void {
+  attachForceFlushCompletedCallback(cb: (success: boolean) => any, useSafe = false): void {
     if (useSafe) {
       cb = this.safe(cb)
     }
