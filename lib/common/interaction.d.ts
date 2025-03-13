@@ -29,7 +29,7 @@ type Failure = {
 };
 type ForceFlushCompleted = {
     type: 'force_flush_completed';
-    timedOut?: boolean;
+    success: boolean;
 };
 export type FromWorkerData = 'restart' | Failure | 'not_init' | ForceFlushCompleted | {
     type: 'compress';
