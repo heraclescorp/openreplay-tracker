@@ -74,6 +74,8 @@ export default class App {
     private readonly startCallbacks;
     private readonly stopCallbacks;
     private readonly commitCallbacks;
+    private readonly notInitCallbacks;
+    private readonly forceFlushCompletedCallbacks;
     readonly options: AppOptions;
     readonly networkOptions?: NetworkOptions;
     private readonly revID;
@@ -96,6 +98,7 @@ export default class App {
     attachCommitCallback(cb: CommitCallback): void;
     attachStartCallback(cb: StartCallback, useSafe?: boolean): void;
     attachStopCallback(cb: () => any, useSafe?: boolean): void;
+    attachForceFlushCompletedCallback(cb: (timedOut?: boolean) => any, useSafe?: boolean): void;
     attachEventListener(target: EventTarget, type: string, listener: EventListener, useSafe?: boolean, useCapture?: boolean): void;
     checkRequiredVersion(version: string): boolean;
     private getTrackerInfo;

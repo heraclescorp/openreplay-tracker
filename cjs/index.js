@@ -220,6 +220,12 @@ class API {
         }
         this.app.forceFlushBatch();
     }
+    onForceFlushCompleted(callback) {
+        if (this.app === null) {
+            return;
+        }
+        this.app.attachForceFlushCompletedCallback(callback);
+    }
     getSessionToken() {
         if (this.app === null) {
             return null;
