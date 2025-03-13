@@ -35,8 +35,14 @@ type Failure = {
   reason: string
 }
 
+type ForceFlushCompleted = {
+  type: 'force_flush_completed'
+  timedOut?: boolean
+}
+
 export type FromWorkerData =
   | 'restart'
   | Failure
   | 'not_init'
+  | ForceFlushCompleted
   | { type: 'compress'; batch: Uint8Array }

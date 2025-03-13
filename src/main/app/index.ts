@@ -122,6 +122,8 @@ export default class App {
   private readonly startCallbacks: Array<StartCallback> = []
   private readonly stopCallbacks: Array<() => any> = []
   private readonly commitCallbacks: Array<CommitCallback> = []
+  private readonly notInitCallbacks: Array<() => any> = []
+  private readonly forceFlushCompletedCallbacks: Array<(timedOut?: boolean) => any> = []
   public readonly options: AppOptions
   public readonly networkOptions?: NetworkOptions
   private readonly revID: string
@@ -211,6 +213,14 @@ export default class App {
         } else if (data.type === 'failure') {
           this.stop(false)
           this._debug('worker_failed', data.reason)
+        } else if (data.type === 'force_flush_completed') {
+          this.forceFlushCompletedCallbacks.forEach((cb) => {
+            try {
+              cb(data.timedOut)
+            } catch (e) {
+              this._debug('force_flush_completed_callback_error', e)
+            }
+          })
         } else if (data.type === 'compress') {
           const batch = data.batch
           const batchSize = batch.byteLength
@@ -384,6 +394,13 @@ export default class App {
       cb = this.safe(cb)
     }
     this.stopCallbacks.push(cb)
+  }
+
+  attachForceFlushCompletedCallback(cb: (timedOut?: boolean) => any, useSafe = false): void {
+    if (useSafe) {
+      cb = this.safe(cb)
+    }
+    this.forceFlushCompletedCallbacks.push(cb)
   }
 
   // Use  app.nodes.attachNodeListener for registered nodes instead
