@@ -1,15 +1,16 @@
 import type App from '../app/index.js';
-declare type TextEditableElement = HTMLInputElement | HTMLTextAreaElement;
-export declare function getInputLabel(node: TextEditableElement): string;
-export declare const enum InputMode {
-    Plain = 0,
-    Obscured = 1,
-    Hidden = 2
-}
+type TextFieldElement = HTMLInputElement | HTMLTextAreaElement;
+export declare function getInputLabel(node: TextFieldElement): string;
+export declare const InputMode: {
+    readonly Plain: 0;
+    readonly Obscured: 1;
+    readonly Hidden: 2;
+};
+export type InputModeT = (typeof InputMode)[keyof typeof InputMode];
 export interface Options {
     obscureInputNumbers: boolean;
     obscureInputEmails: boolean;
-    defaultInputMode: InputMode;
+    defaultInputMode: InputModeT;
     obscureInputDates: boolean;
 }
 export default function (app: App, opts: Partial<Options>): void;

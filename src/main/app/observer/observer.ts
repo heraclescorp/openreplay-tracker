@@ -1,6 +1,5 @@
 import {
   RemoveNodeAttribute,
-  SetNodeAttribute,
   SetNodeAttributeURLBased,
   SetCSSDataURLBased,
   SetNodeData,
@@ -8,11 +7,22 @@ import {
   CreateElementNode,
   MoveNode,
   RemoveNode,
+  UnbindNodes,
 } from '../messages.gen.js'
 import App from '../index.js'
-import { isRootNode, isTextNode, isElementNode, isSVGElement, hasTag } from '../guards.js'
+import {
+  isRootNode,
+  isTextNode,
+  isElementNode,
+  isSVGElement,
+  hasTag,
+  isCommentNode,
+} from '../guards.js'
 
 function isIgnored(node: Node): boolean {
+  if (isCommentNode(node)) {
+    return true
+  }
   if (isTextNode(node)) {
     return false
   }
@@ -128,7 +138,7 @@ export default abstract class Observer {
         }
         this.app.send(SetNodeAttributeURLBased(id, name, value, this.app.getBaseHref()))
       } else {
-        this.app.send(SetNodeAttribute(id, name, value))
+        this.app.attributeSender.sendSetAttribute(id, name, value)
       }
       return
     }
@@ -144,7 +154,7 @@ export default abstract class Observer {
     }
     if (
       name === 'value' &&
-      hasTag(node, 'INPUT') &&
+      hasTag(node, 'input') &&
       node.type !== 'button' &&
       node.type !== 'reset' &&
       node.type !== 'submit'
@@ -155,18 +165,18 @@ export default abstract class Observer {
       this.app.send(RemoveNodeAttribute(id, name))
       return
     }
-    if (name === 'style' || (name === 'href' && hasTag(node, 'LINK'))) {
+    if (name === 'style' || (name === 'href' && hasTag(node, 'link'))) {
       this.app.send(SetNodeAttributeURLBased(id, name, value, this.app.getBaseHref()))
       return
     }
     if (name === 'href' || value.length > 1e5) {
       value = ''
     }
-    this.app.send(SetNodeAttribute(id, name, value))
+    this.app.attributeSender.sendSetAttribute(id, name, value)
   }
 
   private sendNodeData(id: number, parentElement: Element, data: string): void {
-    if (hasTag(parentElement, 'STYLE') || hasTag(parentElement, 'style')) {
+    if (hasTag(parentElement, 'style')) {
       this.app.send(SetCSSDataURLBased(id, data, this.app.getBaseHref()))
       return
     }
@@ -224,10 +234,19 @@ export default abstract class Observer {
         // @ts-ignore
         false,
       )
+
+      let removed = 0
+      const totalBeforeRemove = this.app.nodes.getNodeCount()
+
       while (walker.nextNode()) {
+        removed += 1
         this.app.nodes.unregisterNode(walker.currentNode)
       }
-      // MBTODO: count and send RemovedNodesCount (for the page crash detection in heuristics)
+
+      const removedPercent = Math.floor((removed / totalBeforeRemove) * 100)
+      if (removedPercent > 30) {
+        this.app.send(UnbindNodes(removedPercent))
+      }
     }
   }
 
@@ -242,7 +261,7 @@ export default abstract class Observer {
     // Disable parent check for the upper context HTMLHtmlElement, because it is root there... (before)
     // TODO: get rid of "special" cases (there is an issue with CreateDocument altered behaviour though)
     // TODO: Clean the logic (though now it workd fine)
-    if (!hasTag(node, 'HTML') || !this.isTopContext) {
+    if (!hasTag(node, 'html') || !this.isTopContext) {
       if (parent === null) {
         // Sometimes one observation contains attribute mutations for the removimg node, which gets ignored here.
         // That shouldn't affect the visual rendering ( should it? maybe when transition applied? )
@@ -352,7 +371,7 @@ export default abstract class Observer {
     this.clear()
   }
 
-  // ISSSUE (nodeToBinde should be the same as node. Look at the comment about 0-node at the beginning of the file.)
+  // ISSSUE (nodeToBinde should be the same as node in all cases. Look at the comment about 0-node at the beginning of the file.)
   // TODO: use one observer instance for all iframes/shadowRoots (composition instiad of inheritance)
   protected observeRoot(
     node: Node,

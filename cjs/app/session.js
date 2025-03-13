@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const utils_js_1 = require("../utils.js");
 class Session {
     constructor(app, options) {
         this.app = app;
@@ -8,6 +9,7 @@ class Session {
         this.userID = null;
         this.callbacks = [];
         this.timestamp = 0;
+        this.createTabId();
     }
     attachUpdateCallback(cb) {
         this.callbacks.push(cb);
@@ -47,6 +49,9 @@ class Session {
     setUserID(userID) {
         this.userID = userID;
         this.handleUpdate({ userID });
+    }
+    setUserInfo(userInfo) {
+        this.userInfo = userInfo;
     }
     getPageNumber() {
         const pageNoStr = this.app.sessionStorage.getItem(this.options.session_pageno_key);
@@ -93,6 +98,25 @@ class Session {
             return;
         }
         return encodeURI(String(pageNo) + '&' + token);
+    }
+    getTabId() {
+        if (!this.tabId)
+            this.createTabId();
+        return this.tabId;
+    }
+    regenerateTabId() {
+        const randomId = (0, utils_js_1.generateRandomId)(12);
+        this.app.sessionStorage.setItem(this.options.session_tabid_key, randomId);
+        this.tabId = randomId;
+    }
+    createTabId() {
+        const localId = this.app.sessionStorage.getItem(this.options.session_tabid_key);
+        if (localId) {
+            this.tabId = localId;
+        }
+        else {
+            this.regenerateTabId();
+        }
     }
     getInfo() {
         return {

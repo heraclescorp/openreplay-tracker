@@ -3,6 +3,7 @@ type ElementListener = [string, EventListener, boolean]
 
 export default class Nodes {
   private nodes: Array<Node | void> = []
+  private totalNodeAmount = 0
   private readonly nodeCallbacks: Array<NodeCallback> = []
   private readonly elementListeners: Map<number, Array<ElementListener>> = new Map()
 
@@ -12,6 +13,7 @@ export default class Nodes {
   attachNodeCallback(nodeCallback: NodeCallback): void {
     this.nodeCallbacks.push(nodeCallback)
   }
+
   attachNodeListener(node: Node, type: string, listener: EventListener, useCapture = true): void {
     const id = this.getID(node)
     if (id === undefined) {
@@ -30,12 +32,14 @@ export default class Nodes {
     let id: number = (node as any)[this.node_id]
     const isNew = id === undefined
     if (isNew) {
+      this.totalNodeAmount++
       id = this.nodes.length
       this.nodes[id] = node
       ;(node as any)[this.node_id] = id
     }
     return [id, isNew]
   }
+
   unregisterNode(node: Node): number | undefined {
     const id = (node as any)[this.node_id]
     if (id !== undefined) {
@@ -48,9 +52,11 @@ export default class Nodes {
           node.removeEventListener(listener[0], listener[1], listener[2]),
         )
       }
+      this.totalNodeAmount--
     }
     return id
   }
+
   cleanTree() {
     // sadly we keep empty items in array here resulting in some memory still being used
     // but its still better than keeping dead nodes or undef elements
@@ -63,20 +69,28 @@ export default class Nodes {
       }
     }
   }
+
   callNodeCallbacks(node: Node, isStart: boolean): void {
     this.nodeCallbacks.forEach((cb) => cb(node, isStart))
   }
+
   getID(node: Node): number | undefined {
+    if (!node) return undefined
     return (node as any)[this.node_id]
   }
+
   getNode(id: number) {
     return this.nodes[id]
+  }
+
+  getNodeCount() {
+    return this.totalNodeAmount
   }
 
   clear(): void {
     for (let id = 0; id < this.nodes.length; id++) {
       const node = this.nodes[id]
-      if (node === undefined) {
+      if (!node) {
         continue
       }
       this.unregisterNode(node)

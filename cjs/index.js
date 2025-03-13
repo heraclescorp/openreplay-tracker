@@ -22,9 +22,13 @@ const viewport_js_1 = require("./modules/viewport.js");
 const cssrules_js_1 = require("./modules/cssrules.js");
 const focus_js_1 = require("./modules/focus.js");
 const fonts_js_1 = require("./modules/fonts.js");
+const network_js_1 = require("./modules/network.js");
 const constructedStyleSheets_js_1 = require("./modules/constructedStyleSheets.js");
+const selection_js_1 = require("./modules/selection.js");
+const tabs_js_1 = require("./modules/tabs.js");
 const utils_js_1 = require("./utils.js");
-const DOCS_SETUP = '/installation/setup-or';
+const featureFlags_js_1 = require("./modules/featureFlags.js");
+const DOCS_SETUP = '/installation/javascript-sdk';
 function processOptions(obj) {
     if (obj == null) {
         console.error(`OpenReplay: invalid options argument type. Please, check documentation on ${utils_js_1.DOCS_HOST}${DOCS_SETUP}`);
@@ -108,21 +112,41 @@ class API {
             (0, exception_js_1.default)(app, options);
             (0, img_js_1.default)(app);
             (0, input_js_1.default)(app, options);
-            (0, mouse_js_1.default)(app);
+            (0, mouse_js_1.default)(app, options.mouse);
             (0, timing_js_1.default)(app, options);
             (0, performance_js_1.default)(app, options);
             (0, scroll_js_1.default)(app);
             (0, focus_js_1.default)(app);
             (0, fonts_js_1.default)(app);
+            (0, network_js_1.default)(app, options.network);
+            (0, selection_js_1.default)(app);
+            (0, tabs_js_1.default)(app);
+            this.featureFlags = new featureFlags_js_1.default(app);
             window.__OPENREPLAY__ = this;
-            if (options.autoResetOnWindowOpen) {
-                const wOpen = window.open;
+            app.attachStartCallback(() => {
+                var _a;
+                if ((_a = options.flags) === null || _a === void 0 ? void 0 : _a.onFlagsLoad) {
+                    this.onFlagsLoad(options.flags.onFlagsLoad);
+                }
+                void this.featureFlags.reloadFlags();
+            });
+            const wOpen = window.open;
+            if (options.autoResetOnWindowOpen || options.resetTabOnWindowOpen) {
                 app.attachStartCallback(() => {
+                    var _a;
+                    const tabId = app.getTabId();
+                    const sessStorage = (_a = app.sessionStorage) !== null && _a !== void 0 ? _a : window.sessionStorage;
                     // @ts-ignore ?
                     window.open = function (...args) {
-                        app.resetNextPageSession(true);
+                        if (options.autoResetOnWindowOpen) {
+                            app.resetNextPageSession(true);
+                        }
+                        if (options.resetTabOnWindowOpen) {
+                            sessStorage.removeItem(options.session_tabid_key || '__openreplay_tabid');
+                        }
                         wOpen.call(window, ...args);
                         app.resetNextPageSession(false);
+                        sessStorage.setItem(options.session_tabid_key || '__openreplay_tabid', tabId);
                     };
                 });
                 app.attachStopCallback(() => {
@@ -138,12 +162,30 @@ class API {
             // no-cors issue only with text/plain or not-set Content-Type
             // req.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
             req.send(JSON.stringify({
-                trackerVersion: '4.1.9',
+                trackerVersion: '9.0.11',
                 projectKey: options.projectKey,
                 doNotTrack,
                 // TODO: add precise reason (an exact API missing)
             }));
         }
+    }
+    isFlagEnabled(flagName) {
+        return this.featureFlags.isFlagEnabled(flagName);
+    }
+    onFlagsLoad(callback) {
+        this.featureFlags.onFlagsLoad(callback);
+    }
+    clearPersistFlags() {
+        this.featureFlags.clearPersistFlags();
+    }
+    reloadFlags() {
+        return this.featureFlags.reloadFlags();
+    }
+    getFeatureFlag(flagName) {
+        return this.featureFlags.getFeatureFlag(flagName);
+    }
+    getAllFeatureFlags() {
+        return this.featureFlags.flags;
     }
     use(fn) {
         return fn(this.app, this.options);
@@ -172,6 +214,12 @@ class API {
         this.app.stop();
         return this.app.session.getSessionHash();
     }
+    forceFlushBatch() {
+        if (this.app === null) {
+            return;
+        }
+        this.app.forceFlushBatch();
+    }
     getSessionToken() {
         if (this.app === null) {
             return null;
@@ -184,15 +232,21 @@ class API {
         }
         return this.app.getSessionID();
     }
+    getTabId() {
+        if (this.app === null) {
+            return null;
+        }
+        return this.app.getTabId();
+    }
     sessionID() {
         (0, utils_js_1.deprecationWarn)("'sessionID' method", "'getSessionID' method", '/');
         return this.getSessionID();
     }
-    getSessionURL() {
+    getSessionURL(options) {
         if (this.app === null) {
             return undefined;
         }
-        return this.app.getSessionURL();
+        return this.app.getSessionURL(options);
     }
     setUserID(id) {
         if (typeof id === 'string' && this.app !== null) {
@@ -233,7 +287,7 @@ class API {
                 catch (e) {
                     return;
                 }
-                this.app.send((0, messages_gen_js_1.RawCustomEvent)(key, payload));
+                this.app.send((0, messages_gen_js_1.CustomEvent)(key, payload));
             }
         }
     }

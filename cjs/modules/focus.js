@@ -11,7 +11,7 @@ function default_1(app) {
     }
     let blurred = false;
     app.nodes.attachNodeCallback((node) => {
-        if (!(0, guards_js_1.hasTag)(node, 'BODY')) {
+        if (!(0, guards_js_1.hasTag)(node, 'body')) {
             return;
         }
         app.nodes.attachNodeListener(node, 'focus', (e) => {
@@ -34,7 +34,7 @@ function default_1(app) {
     });
     app.attachStartCallback(() => {
         let elem = document.activeElement;
-        while (elem && (0, guards_js_1.hasTag)(elem, 'IFRAME') && elem.contentDocument) {
+        while (elem && (0, guards_js_1.hasTag)(elem, 'iframe') && elem.contentDocument) {
             elem = elem.contentDocument.activeElement;
         }
         if (elem && elem !== elem.ownerDocument.body) {

@@ -37,7 +37,7 @@ function default_1(app) {
     };
     app.observer.attachContextCallback(patchWindow);
     patchWindow(window);
-    app.nodes.attachNodeCallback((node) => {
+    app.nodes.attachNodeCallback(app.safe((node) => {
         if (!(0, guards_js_1.isDocument)(node)) {
             return;
         }
@@ -52,6 +52,6 @@ function default_1(app) {
         ffDataArr.forEach((ffData) => {
             app.send((0, messages_gen_js_1.LoadFontFace)(parentID, ...ffData));
         });
-    });
+    }));
 }
 exports.default = default_1;

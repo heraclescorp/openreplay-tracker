@@ -11,3 +11,9 @@ export declare const DOCS_HOST = "https://docs.openreplay.com";
 export declare function deprecationWarn(nameOfFeature: string, useInstead: string, docsPath?: string): void;
 export declare function getLabelAttribute(e: Element): string | null;
 export declare function hasOpenreplayAttribute(e: Element, attr: string): boolean;
+/**
+ * checks if iframe is accessible
+ **/
+export declare function canAccessIframe(iframe: HTMLIFrameElement): boolean;
+export declare function generateRandomId(len?: number): string;
+export declare function inIframe(): boolean;

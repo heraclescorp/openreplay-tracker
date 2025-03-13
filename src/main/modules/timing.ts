@@ -1,6 +1,6 @@
 import type App from '../app/index.js'
 import { hasTag } from '../app/guards.js'
-import { isURL } from '../utils.js'
+import { isURL, getTimeOrigin } from '../utils.js'
 import { ResourceTiming, PageLoadTiming, PageRenderTiming } from '../app/messages.gen.js'
 
 // Inspired by https://github.com/WPO-Foundation/RUM-SpeedIndex/blob/master/src/rum-speedindex.js
@@ -21,7 +21,7 @@ function getPaintBlocks(resources: ResourcesTimeMap): Array<PaintBlock> {
   for (let i = 0; i < elements.length; i++) {
     const element = elements[i]
     let src = ''
-    if (hasTag(element, 'IMG')) {
+    if (hasTag(element, 'img')) {
       src = element.currentSrc || element.src
     }
     if (!src) {
@@ -83,6 +83,7 @@ export interface Options {
   captureResourceTimings: boolean
   capturePageLoadTimings: boolean
   capturePageRenderTimings: boolean
+  excludedResourceUrls?: Array<string>
 }
 
 export default function (app: App, opts: Partial<Options>): void {
@@ -91,6 +92,7 @@ export default function (app: App, opts: Partial<Options>): void {
       captureResourceTimings: true,
       capturePageLoadTimings: true,
       capturePageRenderTimings: true,
+      excludedResourceUrls: [],
     },
     opts,
   )
@@ -108,9 +110,15 @@ export default function (app: App, opts: Partial<Options>): void {
     if (resources !== null) {
       resources[entry.name] = entry.startTime + entry.duration
     }
+
+    options.excludedResourceUrls?.forEach((url) => {
+      if (entry.name.startsWith(url)) {
+        return
+      }
+    })
     app.send(
       ResourceTiming(
-        entry.startTime + performance.timing.navigationStart,
+        entry.startTime + getTimeOrigin(),
         entry.duration,
         entry.responseStart && entry.startTime ? entry.responseStart - entry.startTime : 0,
         entry.transferSize > entry.encodedBodySize ? entry.transferSize - entry.encodedBodySize : 0,
@@ -118,13 +126,14 @@ export default function (app: App, opts: Partial<Options>): void {
         entry.decodedBodySize || 0,
         entry.name,
         entry.initiatorType,
+        entry.transferSize,
+        // @ts-ignore
+        (entry.responseStatus && entry.responseStatus === 304) || entry.transferSize === 0,
       ),
     )
   }
 
-  const observer: PerformanceObserver = new PerformanceObserver((list) =>
-    list.getEntries().forEach(resourceTiming),
-  )
+  const observer = new PerformanceObserver((list) => list.getEntries().forEach(resourceTiming))
 
   let prevSessionID: string | undefined
   app.attachStartCallback(function ({ sessionID }) {
@@ -165,6 +174,9 @@ export default function (app: App, opts: Partial<Options>): void {
       if (performance.timing.loadEventEnd || performance.now() > 30000) {
         pageLoadTimingSent = true
         const {
+          // should be ok to use here, (https://github.com/mdn/content/issues/4713)
+          // since it is compared with the values obtained on the page load (before any possible sleep state)
+          // deprecated though
           navigationStart,
           requestStart,
           responseStart,

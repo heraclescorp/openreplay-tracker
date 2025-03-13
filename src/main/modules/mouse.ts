@@ -1,28 +1,19 @@
 import type App from '../app/index.js'
 import { hasTag, isSVGElement, isDocument } from '../app/guards.js'
-import { normSpaces, hasOpenreplayAttribute, getLabelAttribute } from '../utils.js'
-import { MouseMove, MouseClick } from '../app/messages.gen.js'
+import { normSpaces, hasOpenreplayAttribute, getLabelAttribute, now } from '../utils.js'
+import { MouseMove, MouseClick, MouseThrashing } from '../app/messages.gen.js'
 import { getInputLabel } from './input.js'
+import { finder } from '@medv/finder'
 
-function _getSelector(target: Element, document: Document): string {
-  let el: Element | null = target
-  let selector: string | null = null
-  do {
-    if (el.id) {
-      return `#${el.id}` + (selector ? ` > ${selector}` : '')
-    }
-    selector =
-      el.className
-        .split(' ')
-        .map((cn) => cn.trim())
-        .filter((cn) => cn !== '')
-        .reduce((sel, cn) => `${sel}.${cn}`, el.tagName.toLowerCase()) +
-      (selector ? ` > ${selector}` : '')
-    if (el === document.body) {
-      return selector
-    }
-    el = el.parentElement
-  } while (el !== document.body && el !== null)
+function _getSelector(target: Element, document: Document, options?: MouseHandlerOptions): string {
+  const selector = finder(target, {
+    root: document.body,
+    seedMinLength: 3,
+    optimizedMinLength: options?.minSelectorDepth || 2,
+    threshold: options?.nthThreshold || 1000,
+    maxNumberOfTries: options?.maxOptimiseTries || 10_000,
+  })
+
   return selector
 }
 
@@ -33,11 +24,13 @@ function isClickable(element: Element): boolean {
     tag === 'A' ||
     tag === 'LI' ||
     tag === 'SELECT' ||
+    tag === 'TR' ||
+    tag === 'TH' ||
     (element as HTMLElement).onclick != null ||
     element.getAttribute('role') === 'button'
   )
   //|| element.className.includes("btn")
-  // MBTODO: intersept addEventListener
+  // MBTODO: intercept addEventListener
 }
 
 //TODO: fix (typescript is not sure about target variable after assignation of svg)
@@ -80,13 +73,44 @@ function _getTarget(target: Element, document: Document): Element | null {
   return target === document.documentElement ? null : target
 }
 
-export default function (app: App): void {
+export interface MouseHandlerOptions {
+  disableClickmaps?: boolean
+  /** minimum length of an optimised selector.
+   *
+   * body > div > div > p => body > p for example
+   *
+   * default 2
+   * */
+  minSelectorDepth?: number
+  /** how many selectors to try before falling back to nth-child selectors
+   * performance expensive operation
+   *
+   * default 1000
+   * */
+  nthThreshold?: number
+  /**
+   * how many tries to optimise and shorten the selector
+   *
+   * default 10_000
+   * */
+  maxOptimiseTries?: number
+  /**
+   * how many ticks to wait before capturing mouse position
+   * (can affect performance)
+   * 1 tick = 30ms
+   * default 7
+   * */
+  trackingOffset?: number
+}
+
+export default function (app: App, options?: MouseHandlerOptions): void {
+  const { disableClickmaps = false } = options || {}
   function getTargetLabel(target: Element): string {
     const dl = getLabelAttribute(target)
     if (dl !== null) {
       return dl
     }
-    if (hasTag(target, 'INPUT')) {
+    if (hasTag(target, 'input')) {
       return getInputLabel(target)
     }
     if (isClickable(target)) {
@@ -107,12 +131,45 @@ export default function (app: App): void {
   let mouseTargetTime = 0
   let selectorMap: { [id: number]: string } = {}
 
+  let velocity = 0
+  let direction = 0
+  let directionChangeCount = 0
+  let distance = 0
+  let checkIntervalId: NodeJS.Timer
+  const shakeThreshold = 0.008
+  const shakeCheckInterval = 225
+
+  function checkMouseShaking() {
+    const nextVelocity = distance / shakeCheckInterval
+
+    if (!velocity) {
+      velocity = nextVelocity
+      return
+    }
+
+    const acceleration = (nextVelocity - velocity) / shakeCheckInterval
+    if (directionChangeCount > 4 && acceleration > shakeThreshold) {
+      app.send(MouseThrashing(now()))
+    }
+
+    distance = 0
+    directionChangeCount = 0
+    velocity = nextVelocity
+  }
+
+  app.attachStartCallback(() => {
+    checkIntervalId = setInterval(() => checkMouseShaking(), shakeCheckInterval)
+  })
+
   app.attachStopCallback(() => {
     mousePositionX = -1
     mousePositionY = -1
     mousePositionChanged = false
     mouseTarget = null
     selectorMap = {}
+    if (checkIntervalId) {
+      clearInterval(checkIntervalId as unknown as number)
+    }
   })
 
   const sendMouseMove = (): void => {
@@ -123,8 +180,8 @@ export default function (app: App): void {
   }
 
   const patchDocument = (document: Document, topframe = false) => {
-    function getSelector(id: number, target: Element): string {
-      return (selectorMap[id] = selectorMap[id] || _getSelector(target, document))
+    function getSelector(id: number, target: Element, options?: MouseHandlerOptions): string {
+      return (selectorMap[id] = selectorMap[id] || _getSelector(target, document, options))
     }
 
     const attachListener = topframe
@@ -146,6 +203,14 @@ export default function (app: App): void {
         mousePositionX = e.clientX + left
         mousePositionY = e.clientY + top
         mousePositionChanged = true
+
+        const nextDirection = Math.sign(e.movementX)
+        distance += Math.abs(e.movementX) + Math.abs(e.movementY)
+
+        if (nextDirection !== direction) {
+          direction = nextDirection
+          directionChangeCount++
+        }
       },
       false,
     )
@@ -162,7 +227,7 @@ export default function (app: App): void {
             id,
             mouseTarget === target ? Math.round(performance.now() - mouseTargetTime) : 0,
             getTargetLabel(target),
-            getSelector(id, target),
+            isClickable(target) && !disableClickmaps ? getSelector(id, target, options) : '',
           ),
           true,
         )
@@ -178,5 +243,5 @@ export default function (app: App): void {
   })
   patchDocument(document, true)
 
-  app.ticker.attach(sendMouseMove, 10)
+  app.ticker.attach(sendMouseMove, options?.trackingOffset || 7)
 }

@@ -2,8 +2,6 @@
 /* eslint-disable */
 
 export declare const enum Type {
-  BatchMetadata = 81,
-  PartitionedMessage = 82,
   Timestamp = 0,
   SetPageLocation = 4,
   SetViewportSize = 5,
@@ -21,11 +19,11 @@ export declare const enum Type {
   SetInputValue = 18,
   SetInputChecked = 19,
   MouseMove = 20,
+  NetworkRequestDeprecated = 21,
   ConsoleLog = 22,
   PageLoadTiming = 23,
   PageRenderTiming = 24,
-  JSExceptionDeprecated = 25,
-  RawCustomEvent = 27,
+  CustomEvent = 27,
   UserID = 28,
   UserAnonymousID = 29,
   Metadata = 30,
@@ -41,7 +39,9 @@ export declare const enum Type {
   NgRx = 47,
   GraphQL = 48,
   PerformanceTrack = 49,
-  ResourceTiming = 53,
+  StringDict = 50,
+  SetNodeAttributeDict = 51,
+  ResourceTimingDeprecated = 53,
   ConnectionInformation = 54,
   SetPageVisibility = 55,
   LoadFontFace = 57,
@@ -59,25 +59,20 @@ export declare const enum Type {
   AdoptedSSDeleteRule = 75,
   AdoptedSSAddOwner = 76,
   AdoptedSSRemoveOwner = 77,
-  Zustand = 79,
   JSException = 78,
+  Zustand = 79,
+  BatchMetadata = 81,
+  PartitionedMessage = 82,
+  NetworkRequest = 83,
+  InputChange = 112,
+  SelectionChange = 113,
+  MouseThrashing = 114,
+  UnbindNodes = 115,
+  ResourceTiming = 116,
+  TabChange = 117,
+  TabData = 118,
 }
 
-
-export type BatchMetadata = [
-  /*type:*/ Type.BatchMetadata,
-  /*version:*/ number,
-  /*pageNo:*/ number,
-  /*firstIndex:*/ number,
-  /*timestamp:*/ number,
-  /*location:*/ string,
-]
-
-export type PartitionedMessage = [
-  /*type:*/ Type.PartitionedMessage,
-  /*partNo:*/ number,
-  /*partTotal:*/ number,
-]
 
 export type Timestamp = [
   /*type:*/ Type.Timestamp,
@@ -187,6 +182,18 @@ export type MouseMove = [
   /*y:*/ number,
 ]
 
+export type NetworkRequestDeprecated = [
+  /*type:*/ Type.NetworkRequestDeprecated,
+  /*type:*/ string,
+  /*method:*/ string,
+  /*url:*/ string,
+  /*request:*/ string,
+  /*response:*/ string,
+  /*status:*/ number,
+  /*timestamp:*/ number,
+  /*duration:*/ number,
+]
+
 export type ConsoleLog = [
   /*type:*/ Type.ConsoleLog,
   /*level:*/ string,
@@ -213,15 +220,8 @@ export type PageRenderTiming = [
   /*timeToInteractive:*/ number,
 ]
 
-export type JSExceptionDeprecated = [
-  /*type:*/ Type.JSExceptionDeprecated,
-  /*name:*/ string,
-  /*message:*/ string,
-  /*payload:*/ string,
-]
-
-export type RawCustomEvent = [
-  /*type:*/ Type.RawCustomEvent,
+export type CustomEvent = [
+  /*type:*/ Type.CustomEvent,
   /*name:*/ string,
   /*payload:*/ string,
 ]
@@ -327,8 +327,21 @@ export type PerformanceTrack = [
   /*usedJSHeapSize:*/ number,
 ]
 
-export type ResourceTiming = [
-  /*type:*/ Type.ResourceTiming,
+export type StringDict = [
+  /*type:*/ Type.StringDict,
+  /*key:*/ number,
+  /*value:*/ string,
+]
+
+export type SetNodeAttributeDict = [
+  /*type:*/ Type.SetNodeAttributeDict,
+  /*id:*/ number,
+  /*nameKey:*/ number,
+  /*valueKey:*/ number,
+]
+
+export type ResourceTimingDeprecated = [
+  /*type:*/ Type.ResourceTimingDeprecated,
   /*timestamp:*/ number,
   /*duration:*/ number,
   /*ttfb:*/ number,
@@ -456,12 +469,6 @@ export type AdoptedSSRemoveOwner = [
   /*id:*/ number,
 ]
 
-export type Zustand = [
-  /*type:*/ Type.Zustand,
-  /*mutation:*/ string,
-  /*state:*/ string,
-]
-
 export type JSException = [
   /*type:*/ Type.JSException,
   /*name:*/ string,
@@ -470,6 +477,91 @@ export type JSException = [
   /*metadata:*/ string,
 ]
 
+export type Zustand = [
+  /*type:*/ Type.Zustand,
+  /*mutation:*/ string,
+  /*state:*/ string,
+]
 
-type Message =  BatchMetadata | PartitionedMessage | Timestamp | SetPageLocation | SetViewportSize | SetViewportScroll | CreateDocument | CreateElementNode | CreateTextNode | MoveNode | RemoveNode | SetNodeAttribute | RemoveNodeAttribute | SetNodeData | SetNodeScroll | SetInputTarget | SetInputValue | SetInputChecked | MouseMove | ConsoleLog | PageLoadTiming | PageRenderTiming | JSExceptionDeprecated | RawCustomEvent | UserID | UserAnonymousID | Metadata | CSSInsertRule | CSSDeleteRule | Fetch | Profiler | OTable | StateAction | Redux | Vuex | MobX | NgRx | GraphQL | PerformanceTrack | ResourceTiming | ConnectionInformation | SetPageVisibility | LoadFontFace | SetNodeFocus | LongTask | SetNodeAttributeURLBased | SetCSSDataURLBased | TechnicalInfo | CustomIssue | CSSInsertRuleURLBased | MouseClick | CreateIFrameDocument | AdoptedSSReplaceURLBased | AdoptedSSInsertRuleURLBased | AdoptedSSDeleteRule | AdoptedSSAddOwner | AdoptedSSRemoveOwner | Zustand | JSException
+export type BatchMetadata = [
+  /*type:*/ Type.BatchMetadata,
+  /*version:*/ number,
+  /*pageNo:*/ number,
+  /*firstIndex:*/ number,
+  /*timestamp:*/ number,
+  /*location:*/ string,
+]
+
+export type PartitionedMessage = [
+  /*type:*/ Type.PartitionedMessage,
+  /*partNo:*/ number,
+  /*partTotal:*/ number,
+]
+
+export type NetworkRequest = [
+  /*type:*/ Type.NetworkRequest,
+  /*type:*/ string,
+  /*method:*/ string,
+  /*url:*/ string,
+  /*request:*/ string,
+  /*response:*/ string,
+  /*status:*/ number,
+  /*timestamp:*/ number,
+  /*duration:*/ number,
+  /*transferredBodySize:*/ number,
+]
+
+export type InputChange = [
+  /*type:*/ Type.InputChange,
+  /*id:*/ number,
+  /*value:*/ string,
+  /*valueMasked:*/ boolean,
+  /*label:*/ string,
+  /*hesitationTime:*/ number,
+  /*inputDuration:*/ number,
+]
+
+export type SelectionChange = [
+  /*type:*/ Type.SelectionChange,
+  /*selectionStart:*/ number,
+  /*selectionEnd:*/ number,
+  /*selection:*/ string,
+]
+
+export type MouseThrashing = [
+  /*type:*/ Type.MouseThrashing,
+  /*timestamp:*/ number,
+]
+
+export type UnbindNodes = [
+  /*type:*/ Type.UnbindNodes,
+  /*totalRemovedPercent:*/ number,
+]
+
+export type ResourceTiming = [
+  /*type:*/ Type.ResourceTiming,
+  /*timestamp:*/ number,
+  /*duration:*/ number,
+  /*ttfb:*/ number,
+  /*headerSize:*/ number,
+  /*encodedBodySize:*/ number,
+  /*decodedBodySize:*/ number,
+  /*url:*/ string,
+  /*initiator:*/ string,
+  /*transferredSize:*/ number,
+  /*cached:*/ boolean,
+]
+
+export type TabChange = [
+  /*type:*/ Type.TabChange,
+  /*tabId:*/ string,
+]
+
+export type TabData = [
+  /*type:*/ Type.TabData,
+  /*tabId:*/ string,
+]
+
+
+type Message =  Timestamp | SetPageLocation | SetViewportSize | SetViewportScroll | CreateDocument | CreateElementNode | CreateTextNode | MoveNode | RemoveNode | SetNodeAttribute | RemoveNodeAttribute | SetNodeData | SetNodeScroll | SetInputTarget | SetInputValue | SetInputChecked | MouseMove | NetworkRequestDeprecated | ConsoleLog | PageLoadTiming | PageRenderTiming | CustomEvent | UserID | UserAnonymousID | Metadata | CSSInsertRule | CSSDeleteRule | Fetch | Profiler | OTable | StateAction | Redux | Vuex | MobX | NgRx | GraphQL | PerformanceTrack | StringDict | SetNodeAttributeDict | ResourceTimingDeprecated | ConnectionInformation | SetPageVisibility | LoadFontFace | SetNodeFocus | LongTask | SetNodeAttributeURLBased | SetCSSDataURLBased | TechnicalInfo | CustomIssue | CSSInsertRuleURLBased | MouseClick | CreateIFrameDocument | AdoptedSSReplaceURLBased | AdoptedSSInsertRuleURLBased | AdoptedSSDeleteRule | AdoptedSSAddOwner | AdoptedSSRemoveOwner | JSException | Zustand | BatchMetadata | PartitionedMessage | NetworkRequest | InputChange | SelectionChange | MouseThrashing | UnbindNodes | ResourceTiming | TabChange | TabData
 export default Message

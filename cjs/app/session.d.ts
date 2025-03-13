@@ -1,4 +1,12 @@
 import type App from './index.js';
+interface UserInfo {
+    userBrowser: string;
+    userCity: string;
+    userCountry: string;
+    userDevice: string;
+    userOS: string;
+    userState: string;
+}
 interface SessionInfo {
     sessionID: string | undefined;
     metadata: Record<string, string>;
@@ -6,10 +14,11 @@ interface SessionInfo {
     timestamp: number;
     projectID?: string;
 }
-declare type OnUpdateCallback = (i: Partial<SessionInfo>) => void;
-export declare type Options = {
+type OnUpdateCallback = (i: Partial<SessionInfo>) => void;
+export type Options = {
     session_token_key: string;
     session_pageno_key: string;
+    session_tabid_key: string;
 };
 export default class Session {
     private readonly app;
@@ -20,18 +29,24 @@ export default class Session {
     private readonly callbacks;
     private timestamp;
     private projectID;
+    private tabId;
+    userInfo: UserInfo;
     constructor(app: App, options: Options);
     attachUpdateCallback(cb: OnUpdateCallback): void;
     private handleUpdate;
     assign(newInfo: Partial<SessionInfo>): void;
     setMetadata(key: string, value: string): void;
     setUserID(userID: string): void;
+    setUserInfo(userInfo: UserInfo): void;
     private getPageNumber;
     incPageNo(): number;
     getSessionToken(): string | undefined;
     setSessionToken(token: string): void;
     applySessionHash(hash: string): void;
     getSessionHash(): string | undefined;
+    getTabId(): string;
+    regenerateTabId(): void;
+    private createTabId;
     getInfo(): SessionInfo;
     reset(): void;
 }

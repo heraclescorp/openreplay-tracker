@@ -1,4 +1,4 @@
-export declare type Offset = [/*left:*/ number, /*top: */ number];
+export type Offset = [/*left:*/ number, /*top: */ number];
 export default class IFrameOffsets {
     private readonly states;
     private calcOffset;

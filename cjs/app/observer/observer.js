@@ -3,6 +3,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const messages_gen_js_1 = require("../messages.gen.js");
 const guards_js_1 = require("../guards.js");
 function isIgnored(node) {
+    if ((0, guards_js_1.isCommentNode)(node)) {
+        return true;
+    }
     if ((0, guards_js_1.isTextNode)(node)) {
         return false;
     }
@@ -112,7 +115,7 @@ class Observer {
                 this.app.send((0, messages_gen_js_1.SetNodeAttributeURLBased)(id, name, value, this.app.getBaseHref()));
             }
             else {
-                this.app.send((0, messages_gen_js_1.SetNodeAttribute)(id, name, value));
+                this.app.attributeSender.sendSetAttribute(id, name, value);
             }
             return;
         }
@@ -125,7 +128,7 @@ class Observer {
             return;
         }
         if (name === 'value' &&
-            (0, guards_js_1.hasTag)(node, 'INPUT') &&
+            (0, guards_js_1.hasTag)(node, 'input') &&
             node.type !== 'button' &&
             node.type !== 'reset' &&
             node.type !== 'submit') {
@@ -135,17 +138,17 @@ class Observer {
             this.app.send((0, messages_gen_js_1.RemoveNodeAttribute)(id, name));
             return;
         }
-        if (name === 'style' || (name === 'href' && (0, guards_js_1.hasTag)(node, 'LINK'))) {
+        if (name === 'style' || (name === 'href' && (0, guards_js_1.hasTag)(node, 'link'))) {
             this.app.send((0, messages_gen_js_1.SetNodeAttributeURLBased)(id, name, value, this.app.getBaseHref()));
             return;
         }
         if (name === 'href' || value.length > 1e5) {
             value = '';
         }
-        this.app.send((0, messages_gen_js_1.SetNodeAttribute)(id, name, value));
+        this.app.attributeSender.sendSetAttribute(id, name, value);
     }
     sendNodeData(id, parentElement, data) {
-        if ((0, guards_js_1.hasTag)(parentElement, 'STYLE') || (0, guards_js_1.hasTag)(parentElement, 'style')) {
+        if ((0, guards_js_1.hasTag)(parentElement, 'style')) {
             this.app.send((0, messages_gen_js_1.SetCSSDataURLBased)(id, data, this.app.getBaseHref()));
             return;
         }
@@ -190,10 +193,16 @@ class Observer {
             }, 
             // @ts-ignore
             false);
+            let removed = 0;
+            const totalBeforeRemove = this.app.nodes.getNodeCount();
             while (walker.nextNode()) {
+                removed += 1;
                 this.app.nodes.unregisterNode(walker.currentNode);
             }
-            // MBTODO: count and send RemovedNodesCount (for the page crash detection in heuristics)
+            const removedPercent = Math.floor((removed / totalBeforeRemove) * 100);
+            if (removedPercent > 30) {
+                this.app.send((0, messages_gen_js_1.UnbindNodes)(removedPercent));
+            }
         }
     }
     // A top-consumption function on the infinite lists test. (~1% of performance resources)
@@ -206,7 +215,7 @@ class Observer {
         // Disable parent check for the upper context HTMLHtmlElement, because it is root there... (before)
         // TODO: get rid of "special" cases (there is an issue with CreateDocument altered behaviour though)
         // TODO: Clean the logic (though now it workd fine)
-        if (!(0, guards_js_1.hasTag)(node, 'HTML') || !this.isTopContext) {
+        if (!(0, guards_js_1.hasTag)(node, 'html') || !this.isTopContext) {
             if (parent === null) {
                 // Sometimes one observation contains attribute mutations for the removimg node, which gets ignored here.
                 // That shouldn't affect the visual rendering ( should it? maybe when transition applied? )
@@ -314,7 +323,7 @@ class Observer {
         });
         this.clear();
     }
-    // ISSSUE (nodeToBinde should be the same as node. Look at the comment about 0-node at the beginning of the file.)
+    // ISSSUE (nodeToBinde should be the same as node in all cases. Look at the comment about 0-node at the beginning of the file.)
     // TODO: use one observer instance for all iframes/shadowRoots (composition instiad of inheritance)
     observeRoot(node, beforeCommit, nodeToBind = node) {
         this.observer.observe(node, {

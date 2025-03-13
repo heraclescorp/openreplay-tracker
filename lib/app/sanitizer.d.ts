@@ -9,6 +9,7 @@ export interface Options {
     obscureTextNumbers: boolean;
     domSanitizer?: (node: Element) => SanitizeLevel;
 }
+export declare const stringWiper: (input: string) => string;
 export default class Sanitizer {
     private readonly app;
     private readonly obscured;

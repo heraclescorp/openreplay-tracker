@@ -1,19 +1,21 @@
 import type Message from './messages.gen.js'
-import { Timestamp, Metadata, UserID } from './messages.gen.js'
-import { now, adjustTimeOrigin, deprecationWarn } from '../utils.js'
+import { Timestamp, Metadata, UserID, Type as MType, TabChange, TabData } from './messages.gen.js'
+import { now, adjustTimeOrigin, deprecationWarn, inIframe } from '../utils.js'
 import Nodes from './nodes.js'
 import Observer from './observer/top_observer.js'
 import Sanitizer from './sanitizer.js'
 import Ticker from './ticker.js'
 import Logger, { LogLevel } from './logger.js'
 import Session from './session.js'
-
+import { gzip } from 'fflate'
 import { deviceMemory, jsHeapSizeLimit } from '../modules/performance.js'
-
+import AttributeSender from '../modules/attributeSender.js'
 import type { Options as ObserverOptions } from './observer/top_observer.js'
 import type { Options as SanitizerOptions } from './sanitizer.js'
 import type { Options as LoggerOptions } from './logger.js'
 import type { Options as SessOptions } from './session.js'
+import type { Options as NetworkOptions } from '../modules/network.js'
+
 import type {
   Options as WebworkerOptions,
   ToWorkerData,
@@ -37,6 +39,7 @@ interface OnStartInfo {
   sessionToken: string
   userUUID: string
 }
+
 const CANCELED = 'canceled' as const
 const START_ERROR = ':(' as const
 type SuccessfulStart = OnStartInfo & { success: true }
@@ -44,12 +47,20 @@ type UnsuccessfulStart = {
   reason: typeof CANCELED | string
   success: false
 }
+
+type RickRoll = { source: string; context: string } & (
+  | { line: 'never-gonna-give-you-up' }
+  | { line: 'never-gonna-let-you-down'; token: string }
+  | { line: 'never-gonna-run-around-and-desert-you'; token: string }
+)
+
 const UnsuccessfulStart = (reason: string): UnsuccessfulStart => ({ reason, success: false })
 const SuccessfulStart = (body: OnStartInfo): SuccessfulStart => ({ ...body, success: true })
 export type StartPromiseReturn = SuccessfulStart | UnsuccessfulStart
 
 type StartCallback = (i: OnStartInfo) => void
 type CommitCallback = (messages: Array<Message>) => void
+
 enum ActivityState {
   NotActive,
   Starting,
@@ -62,6 +73,7 @@ type AppOptions = {
   session_reset_key: string
   session_token_key: string
   session_pageno_key: string
+  session_tabid_key: string
   local_uuid_key: string
   ingestPoint: string
   resourceBaseHref: string | null // resourceHref?
@@ -72,9 +84,12 @@ type AppOptions = {
   __debug__?: LoggerOptions
   localStorage: Storage | null
   sessionStorage: Storage | null
+  forceSingleTab?: boolean
+  disableStringDict?: boolean
 
   // @deprecated
   onStart?: StartCallback
+  network?: NetworkOptions
 } & WebworkerOptions &
   SessOptions
 
@@ -82,6 +97,14 @@ export type Options = AppOptions & ObserverOptions & SanitizerOptions
 
 // TODO: use backendHost only
 export const DEFAULT_INGEST_POINT = 'https://api.openreplay.com/ingest'
+
+function getTimezone() {
+  const offset = new Date().getTimezoneOffset() * -1
+  const sign = offset >= 0 ? '+' : '-'
+  const hours = Math.floor(Math.abs(offset) / 60)
+  const minutes = Math.abs(offset) % 60
+  return `UTC${sign}${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
+}
 
 export default class App {
   readonly nodes: Nodes
@@ -94,21 +117,31 @@ export default class App {
   readonly localStorage: Storage
   readonly sessionStorage: Storage
   private readonly messages: Array<Message> = []
-  /* private */ readonly observer: Observer // non-privat for attachContextCallback
+  /* private */
+  readonly observer: Observer // non-privat for attachContextCallback
   private readonly startCallbacks: Array<StartCallback> = []
   private readonly stopCallbacks: Array<() => any> = []
   private readonly commitCallbacks: Array<CommitCallback> = []
-  private readonly options: AppOptions
+  public readonly options: AppOptions
+  public readonly networkOptions?: NetworkOptions
   private readonly revID: string
   private activityState: ActivityState = ActivityState.NotActive
   private readonly version = 'TRACKER_VERSION' // TODO: version compatability check inside each plugin.
   private readonly worker?: TypedWorker
+
+  private compressionThreshold = 24 * 1000
+  private restartAttempts = 0
+  private readonly bc: BroadcastChannel | null = null
+  private readonly contextId
+  public attributeSender: AttributeSender
+
   constructor(projectKey: string, sessionToken: string | undefined, options: Partial<Options>) {
     // if (options.onStart !== undefined) {
     //   deprecationWarn("'onStart' option", "tracker.start().then(/* handle session info */)")
     // } ?? maybe onStart is good
-
+    this.contextId = Math.random().toString(36).slice(2)
     this.projectKey = projectKey
+    this.networkOptions = options.network
     this.options = Object.assign(
       {
         revID: '',
@@ -116,6 +149,7 @@ export default class App {
         session_token_key: '__openreplay_token',
         session_pageno_key: '__openreplay_pageno',
         session_reset_key: '__openreplay_reset',
+        session_tabid_key: '__openreplay_tabid',
         local_uuid_key: '__openreplay_uuid',
         ingestPoint: DEFAULT_INGEST_POINT,
         resourceBaseHref: null,
@@ -124,9 +158,15 @@ export default class App {
         __debug_report_edp: null,
         localStorage: null,
         sessionStorage: null,
+        disableStringDict: false,
+        forceSingleTab: false,
       },
       options,
     )
+
+    if (!this.options.forceSingleTab && globalThis && 'BroadcastChannel' in globalThis) {
+      this.bc = inIframe() ? null : new BroadcastChannel('rick')
+    }
 
     this.revID = this.options.revID
     this.localStorage = this.options.localStorage ?? window.localStorage
@@ -139,6 +179,7 @@ export default class App {
     this.debug = new Logger(this.options.__debug__)
     this.notify = new Logger(this.options.verbose ? LogLevel.Warnings : LogLevel.Silent)
     this.session = new Session(this, this.options)
+    this.attributeSender = new AttributeSender(this, Boolean(this.options.disableStringDict))
     this.session.attachUpdateCallback(({ userID, metadata }) => {
       if (userID != null) {
         // TODO: nullable userID
@@ -149,7 +190,7 @@ export default class App {
       }
     })
 
-    // @depricated (use sessionHash on start instead)
+    // @deprecated (use sessionHash on start instead)
     if (sessionToken != null) {
       this.session.applySessionHash(sessionToken)
     }
@@ -164,10 +205,31 @@ export default class App {
       this.worker.onmessage = ({ data }: MessageEvent<FromWorkerData>) => {
         if (data === 'restart') {
           this.stop(false)
-          this.start({}, true)
+          void this.start({}, true)
+        } else if (data === 'not_init') {
+          console.warn('WebWorker: writer not initialised. Restarting tracker')
         } else if (data.type === 'failure') {
           this.stop(false)
           this._debug('worker_failed', data.reason)
+        } else if (data.type === 'compress') {
+          const batch = data.batch
+          const batchSize = batch.byteLength
+          if (batchSize > this.compressionThreshold) {
+            gzip(data.batch, { mtime: 0 }, (err, result) => {
+              if (err) {
+                console.error('Openreplay compression error:', err)
+                this.stop(false)
+                if (this.restartAttempts < 3) {
+                  this.restartAttempts += 1
+                  void this.start({}, true)
+                }
+              }
+              // @ts-ignore
+              this.worker?.postMessage({ type: 'compressed', batch: result })
+            })
+          } else {
+            this.worker?.postMessage({ type: 'uncompressed', batch: batch })
+          }
         }
       }
       const alertWorker = () => {
@@ -183,6 +245,53 @@ export default class App {
     } catch (e) {
       this._debug('worker_start', e)
     }
+
+    const thisTab = this.session.getTabId()
+
+    const proto = {
+      // ask if there are any tabs alive
+      ask: 'never-gonna-give-you-up',
+      // yes, there are someone out there
+      resp: 'never-gonna-let-you-down',
+      // you stole someone's identity
+      reg: 'never-gonna-run-around-and-desert-you',
+    } as const
+
+    if (this.bc) {
+      this.bc.postMessage({
+        line: proto.ask,
+        source: thisTab,
+        context: this.contextId,
+      })
+    }
+
+    if (this.bc !== null) {
+      this.bc.onmessage = (ev: MessageEvent<RickRoll>) => {
+        if (ev.data.context === this.contextId) {
+          return
+        }
+        if (ev.data.line === proto.resp) {
+          const sessionToken = ev.data.token
+          this.session.setSessionToken(sessionToken)
+        }
+        if (ev.data.line === proto.reg) {
+          const sessionToken = ev.data.token
+          this.session.regenerateTabId()
+          this.session.setSessionToken(sessionToken)
+        }
+        if (ev.data.line === proto.ask) {
+          const token = this.session.getSessionToken()
+          if (token && this.bc) {
+            this.bc.postMessage({
+              line: ev.data.source === thisTab ? proto.reg : proto.resp,
+              token,
+              source: thisTab,
+              context: this.contextId,
+            })
+          }
+        }
+      }
+    }
   }
 
   private _debug(context: string, e: any) {
@@ -192,6 +301,7 @@ export default class App {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           context,
+          // @ts-ignore
           error: `${e}`,
         }),
       })
@@ -199,10 +309,23 @@ export default class App {
     this.debug.error('OpenReplay error: ', context, e)
   }
 
+  private _usingOldFetchPlugin = false
+
   send(message: Message, urgent = false): void {
     if (this.activityState === ActivityState.NotActive) {
       return
     }
+    // === Back compatibility with Fetch/Axios plugins ===
+    if (message[0] === MType.Fetch) {
+      this._usingOldFetchPlugin = true
+      deprecationWarn('Fetch plugin', "'network' init option", '/installation/network-options')
+      deprecationWarn('Axios plugin', "'network' init option", '/installation/network-options')
+    }
+    if (this._usingOldFetchPlugin && message[0] === MType.NetworkRequest) {
+      return
+    }
+    // ====================================================
+
     this.messages.push(message)
     // TODO: commit on start if there were `urgent` sends;
     // Clarify where urgent can be used for;
@@ -213,8 +336,10 @@ export default class App {
       this.commit()
     }
   }
+
   private commit(): void {
     if (this.worker && this.messages.length) {
+      this.messages.unshift(TabData(this.session.getTabId()))
       this.messages.unshift(Timestamp(this.timestamp()))
       this.worker.postMessage(this.messages)
       this.commitCallbacks.forEach((cb) => cb(this.messages))
@@ -223,6 +348,7 @@ export default class App {
   }
 
   private delay = 0
+
   timestamp(): number {
     return now() + this.delay
   }
@@ -245,18 +371,21 @@ export default class App {
   attachCommitCallback(cb: CommitCallback): void {
     this.commitCallbacks.push(cb)
   }
+
   attachStartCallback(cb: StartCallback, useSafe = false): void {
     if (useSafe) {
       cb = this.safe(cb)
     }
     this.startCallbacks.push(cb)
   }
+
   attachStopCallback(cb: () => any, useSafe = false): void {
     if (useSafe) {
       cb = this.safe(cb)
     }
     this.stopCallbacks.push(cb)
   }
+
   // Use  app.nodes.attachNodeListener for registered nodes instead
   attachEventListener(
     target: EventTarget,
@@ -299,39 +428,51 @@ export default class App {
       isSnippet: this.options.__is_snippet,
     }
   }
+
   getSessionInfo() {
     return {
       ...this.session.getInfo(),
       ...this.getTrackerInfo(),
     }
   }
+
   getSessionToken(): string | undefined {
     return this.session.getSessionToken()
   }
+
   getSessionID(): string | undefined {
     return this.session.getInfo().sessionID || undefined
   }
 
-  getSessionURL(): string | undefined {
-    const { projectID, sessionID } = this.session.getInfo()
+  getSessionURL(options?: { withCurrentTime?: boolean }): string | undefined {
+    const { projectID, sessionID, timestamp } = this.session.getInfo()
     if (!projectID || !sessionID) {
       this.debug.error('OpenReplay error: Unable to build session URL')
       return undefined
     }
     const ingest = this.options.ingestPoint
-    const isSaas = ingest === DEFAULT_INGEST_POINT
+    const isSaas = /api\.openreplay\.com/.test(ingest)
 
-    const projectPath = isSaas ? ingest.replace('api', 'app') : ingest
+    const projectPath = isSaas ? 'https://app.openreplay.com/ingest' : ingest
 
-    return projectPath.replace(/ingest$/, `${projectID}/session/${sessionID}`)
+    const url = projectPath.replace(/ingest$/, `${projectID}/session/${sessionID}`)
+
+    if (options?.withCurrentTime) {
+      const jumpTo = now() - timestamp
+      return `${url}?jumpto=${jumpTo}`
+    }
+
+    return url
   }
 
   getHost(): string {
     return new URL(this.options.ingestPoint).host
   }
+
   getProjectKey(): string {
     return this.projectKey
   }
+
   getBaseHref(): string {
     if (typeof this.options.resourceBaseHref === 'string') {
       return this.options.resourceBaseHref
@@ -347,6 +488,7 @@ export default class App {
       location.origin + location.pathname
     )
   }
+
   resolveResourceURL(resourceURL: string): string {
     const base = new URL(this.getBaseHref())
     base.pathname += '/' + new URL(resourceURL).pathname
@@ -406,12 +548,16 @@ export default class App {
       url: document.URL,
       connAttemptCount: this.options.connAttemptCount,
       connAttemptGap: this.options.connAttemptGap,
+      tabId: this.session.getTabId(),
     })
 
     const lsReset = this.sessionStorage.getItem(this.options.session_reset_key) !== null
     this.sessionStorage.removeItem(this.options.session_reset_key)
     const needNewSessionID = startOpts.forceNew || lsReset || resetByWorker
+    const sessionToken = this.session.getSessionToken()
+    const isNewSession = needNewSessionID || !sessionToken
 
+    console.log('OpenReplay: starting session', needNewSessionID, sessionToken)
     return window
       .fetch(this.options.ingestPoint + '/v1/web/start', {
         method: 'POST',
@@ -422,9 +568,10 @@ export default class App {
           ...this.getTrackerInfo(),
           timestamp,
           userID: this.session.getInfo().userID,
-          token: needNewSessionID ? undefined : this.session.getSessionToken(),
+          token: isNewSession ? undefined : sessionToken,
           deviceMemory,
           jsHeapSizeLimit,
+          timezone: getTimezone(),
         }),
       })
       .then((r) => {
@@ -445,16 +592,23 @@ export default class App {
           return Promise.reject('no worker found after start request (this might not happen)')
         }
         if (this.activityState === ActivityState.NotActive) {
-          return Promise.reject('Tracker stopped during authorisation')
+          return Promise.reject('Tracker stopped during authorization')
         }
         const {
           token,
           userUUID,
           projectID,
           beaconSizeLimit,
+          compressionThreshold, // how big the batch should be before we decide to compress it
           delay, //  derived from token
           sessionID, //  derived from token
           startTimestamp, // real startTS (server time), derived from sessionID
+          userBrowser,
+          userCity,
+          userCountry,
+          userDevice,
+          userOS,
+          userState,
         } = r
         if (
           typeof token !== 'string' ||
@@ -468,11 +622,24 @@ export default class App {
         }
         this.delay = delay
         this.session.setSessionToken(token)
+        this.session.setUserInfo({
+          userBrowser,
+          userCity,
+          userCountry,
+          userDevice,
+          userOS,
+          userState,
+        })
         this.session.assign({
           sessionID,
           timestamp: startTimestamp || timestamp,
           projectID,
         })
+        if (!isNewSession && token === sessionToken) {
+          console.log('continuing session on new tab', this.session.getTabId())
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+          this.send(TabChange(this.session.getTabId()))
+        }
         // (Re)send Metadata for the case of a new session
         Object.entries(this.session.getInfo().metadata).forEach(([key, value]) =>
           this.send(Metadata(key, value)),
@@ -484,6 +651,8 @@ export default class App {
           token,
           beaconSizeLimit,
         })
+
+        this.compressionThreshold = compressionThreshold
 
         const onStartInfo = { sessionToken: token, userUUID, sessionID }
 
@@ -498,6 +667,7 @@ export default class App {
         if (typeof this.options.onStart === 'function') {
           this.options.onStart(onStartInfo)
         }
+        this.restartAttempts = 0
         return SuccessfulStart(onStartInfo)
       })
       .catch((reason) => {
@@ -513,24 +683,44 @@ export default class App {
       })
   }
 
+  /**
+   * basically we ask other tabs during constructor
+   * and here we just apply 10ms delay just in case
+   * */
   start(...args: Parameters<App['_start']>): Promise<StartPromiseReturn> {
     if (!document.hidden) {
-      return this._start(...args)
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          resolve(this._start(...args))
+        }, 25)
+      })
     } else {
       return new Promise((resolve) => {
         const onVisibilityChange = () => {
           if (!document.hidden) {
             document.removeEventListener('visibilitychange', onVisibilityChange)
-            resolve(this._start(...args))
+            setTimeout(() => {
+              resolve(this._start(...args))
+            }, 25)
           }
         }
         document.addEventListener('visibilitychange', onVisibilityChange)
       })
     }
   }
+
+  forceFlushBatch() {
+    this.worker?.postMessage('forceFlushBatch')
+  }
+
+  getTabId() {
+    return this.session.getTabId()
+  }
+
   stop(stopWorker = true): void {
     if (this.activityState !== ActivityState.NotActive) {
       try {
+        this.attributeSender.clear()
         this.sanitizer.clear()
         this.observer.disconnect()
         this.nodes.clear()

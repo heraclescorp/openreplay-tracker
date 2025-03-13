@@ -5,14 +5,15 @@ const messages_gen_js_1 = require("../app/messages.gen.js");
 const guards_js_1 = require("../app/guards.js");
 function resolveURL(url, location = document.location) {
     url = url.trim();
-    if (url.startsWith('/')) {
-        return location.origin + url;
-    }
-    else if (url.startsWith('http://') ||
+    if (url.startsWith('//') ||
+        url.startsWith('http://') ||
         url.startsWith('https://') ||
         url.startsWith('data:') // any other possible value here? https://bugzilla.mozilla.org/show_bug.cgi?id=1758035
     ) {
         return url;
+    }
+    else if (url.startsWith('/')) {
+        return location.origin + url;
     }
     else {
         return location.origin + location.pathname + url;
@@ -25,13 +26,13 @@ function isSVGInFireFox(url) {
 const PLACEHOLDER_SRC = 'https://static.openreplay.com/tracker/placeholder.jpeg';
 function default_1(app) {
     function sendPlaceholder(id, node) {
-        app.send((0, messages_gen_js_1.SetNodeAttribute)(id, 'src', PLACEHOLDER_SRC));
+        app.attributeSender.sendSetAttribute(id, 'src', PLACEHOLDER_SRC);
         const { width, height } = node.getBoundingClientRect();
         if (!node.hasAttribute('width')) {
-            app.send((0, messages_gen_js_1.SetNodeAttribute)(id, 'width', String(width)));
+            app.attributeSender.sendSetAttribute(id, 'width', String(width));
         }
         if (!node.hasAttribute('height')) {
-            app.send((0, messages_gen_js_1.SetNodeAttribute)(id, 'height', String(height)));
+            app.attributeSender.sendSetAttribute(id, 'height', String(height));
         }
     }
     const sendSrcset = function (id, img) {
@@ -43,7 +44,7 @@ function default_1(app) {
             .split(',')
             .map((str) => resolveURL(str))
             .join(',');
-        app.send((0, messages_gen_js_1.SetNodeAttribute)(id, 'srcset', resolvedSrcset));
+        app.attributeSender.sendSetAttribute(id, 'srcset', resolvedSrcset);
     };
     const sendSrc = function (id, img) {
         if (img.src.length > utils_js_1.MAX_STR_LEN) {
@@ -54,7 +55,7 @@ function default_1(app) {
     const sendImgError = app.safe(function (img) {
         const resolvedSrc = resolveURL(img.src || ''); // Src type is null sometimes. - is it true?
         if ((0, utils_js_1.isURL)(resolvedSrc)) {
-            app.send((0, messages_gen_js_1.ResourceTiming)(app.timestamp(), 0, 0, 0, 0, 0, resolvedSrc, 'img'));
+            app.send((0, messages_gen_js_1.ResourceTiming)(app.timestamp(), 0, 0, 0, 0, 0, resolvedSrc, 'img', 0, false));
         }
     });
     const sendImgAttrs = app.safe(function (img) {
@@ -97,7 +98,7 @@ function default_1(app) {
         observer.disconnect();
     });
     app.nodes.attachNodeCallback((node) => {
-        if (!(0, guards_js_1.hasTag)(node, 'IMG')) {
+        if (!(0, guards_js_1.hasTag)(node, 'img')) {
             return;
         }
         app.nodes.attachNodeListener(node, 'error', () => sendImgError(node));
