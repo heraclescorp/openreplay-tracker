@@ -210,13 +210,6 @@ export default class App {
           void this.start({}, true)
         } else if (data === 'not_init') {
           console.warn('WebWorker: writer not initialised. Restarting tracker')
-          this.notInitCallbacks.forEach((cb) => {
-            try {
-              cb()
-            } catch (e) {
-              this._debug('not_init_callback_error', e)
-            }
-          })
         } else if (data.type === 'failure') {
           this.stop(false)
           this._debug('worker_failed', data.reason)
