@@ -75,6 +75,49 @@ function initiateFailure(reason: string): void {
 let sendIntervalID: ReturnType<typeof setInterval> | null = null
 let restartTimeoutID: ReturnType<typeof setTimeout>
 
+// Wait for queued data to be sent over network with potential timeout after 3 seconds by default
+function waitForNetworkCompletion(callback: (timedOut: boolean) => void, retries = 30): void {
+  // If no sender or empty queue, we're already done
+  if (!sender || sender['queue'].length === 0) {
+    callback(false)
+    return
+  }
+
+  // Keep track of last item in queue
+  const lastItem = sender['queue'][sender['queue'].length - 1]
+
+  // Function to check if the last item is still in the queue (times out after 3 seconds by default)
+  function checkCompletion(remainingRetries: number): void {
+    // If timeout reached, call callback with timeout flag
+    if (remainingRetries <= 0) {
+      console.warn(
+        'OpenReplay: waitForNetworkCompletion - Network completion timeout reached. Some data may not have been sent.',
+      )
+      callback(true)
+      return
+    }
+
+    // If sender is gone, we're done
+    if (!sender) {
+      callback(false)
+      return
+    }
+
+    // Check if the last item is still in the queue
+    const itemStillInQueue = sender['queue'].includes(lastItem)
+    // If the item is no longer in the queue call callback function with false
+    if (!itemStillInQueue) {
+      callback(false)
+      return
+    }
+
+    // Check again in 100ms
+    setTimeout(() => checkCompletion(remainingRetries - 1), 100)
+  }
+
+  checkCompletion(retries)
+}
+
 // @ts-ignore
 self.onmessage = ({ data }: { data: ToWorkerData }): any => {
   if (data == null) {
@@ -88,6 +131,13 @@ self.onmessage = ({ data }: { data: ToWorkerData }): any => {
   }
   if (data === 'forceFlushBatch') {
     finalize()
+    // Wait for all requests to be sent before sending completion message
+    waitForNetworkCompletion((timedOut) => {
+      postMessage({
+        type: 'force_flush_completed',
+        timedOut,
+      })
+    })
     return
   }
 

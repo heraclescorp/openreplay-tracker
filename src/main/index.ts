@@ -261,6 +261,13 @@ export default class API {
     this.app.forceFlushBatch()
   }
 
+  onForceFlushCompleted(callback: (timedOut?: boolean) => any): void {
+    if (this.app === null) {
+      return
+    }
+    this.app.attachForceFlushCompletedCallback(callback)
+  }
+
   getSessionToken(): string | null | undefined {
     if (this.app === null) {
       return null
