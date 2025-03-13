@@ -98,7 +98,7 @@ export default class App {
     attachCommitCallback(cb: CommitCallback): void;
     attachStartCallback(cb: StartCallback, useSafe?: boolean): void;
     attachStopCallback(cb: () => any, useSafe?: boolean): void;
-    attachForceFlushCompletedCallback(cb: (timedOut?: boolean) => any, useSafe?: boolean): void;
+    attachForceFlushCompletedCallback(cb: (success: boolean) => any, useSafe?: boolean): void;
     attachEventListener(target: EventTarget, type: string, listener: EventListener, useSafe?: boolean, useCapture?: boolean): void;
     checkRequiredVersion(version: string): boolean;
     private getTrackerInfo;
