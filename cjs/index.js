@@ -214,17 +214,14 @@ class API {
         this.app.stop();
         return this.app.session.getSessionHash();
     }
-    forceFlushBatch() {
+    forceFlushBatch(callback) {
         if (this.app === null) {
             return;
+        }
+        if (callback) {
+            this.app.attachForceFlushCompletedCallback(callback);
         }
         this.app.forceFlushBatch();
-    }
-    onForceFlushCompleted(callback) {
-        if (this.app === null) {
-            return;
-        }
-        this.app.attachForceFlushCompletedCallback(callback);
     }
     getSessionToken() {
         if (this.app === null) {

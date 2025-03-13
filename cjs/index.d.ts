@@ -43,8 +43,7 @@ export default class API {
     isActive(): boolean;
     start(startOpts?: Partial<StartOptions>): Promise<StartPromiseReturn>;
     stop(): string | undefined;
-    forceFlushBatch(): void;
-    onForceFlushCompleted(callback: (timedOut?: boolean) => any): void;
+    forceFlushBatch(callback?: (timedOut?: boolean) => any): void;
     getSessionToken(): string | null | undefined;
     getSessionID(): string | null | undefined;
     getTabId(): string | null;
