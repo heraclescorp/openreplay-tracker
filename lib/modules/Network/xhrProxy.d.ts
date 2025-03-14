@@ -35,5 +35,14 @@ export declare class XHRProxyHandler<T extends XMLHttpRequest> implements ProxyH
     protected updateItemByReadyState(): void;
 }
 export default class XHRProxy {
+    static origXMLHttpRequest: {
+        new (): XMLHttpRequest;
+        prototype: XMLHttpRequest;
+        readonly DONE: number;
+        readonly HEADERS_RECEIVED: number;
+        readonly LOADING: number;
+        readonly OPENED: number;
+        readonly UNSENT: number;
+    };
     static create(ignoredHeaders: boolean | string[], setSessionTokenHeader: (cb: (name: string, value: string) => void) => void, sanitize: (data: RequestResponseData) => RequestResponseData, sendMessage: (data: NetworkRequest) => void, isServiceUrl: (url: string) => boolean, tokenUrlMatcher?: (url: string) => boolean): any;
 }

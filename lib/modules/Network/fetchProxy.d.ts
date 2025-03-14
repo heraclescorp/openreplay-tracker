@@ -30,5 +30,6 @@ export declare class FetchProxyHandler<T extends typeof fetch> implements ProxyH
     protected handleResponseBody(resp: Response, item: NetworkMessage): Promise<string> | Promise<ArrayBuffer>;
 }
 export default class FetchProxy {
+    static origFetch: typeof fetch;
     static create(ignoredHeaders: boolean | string[], setSessionTokenHeader: (cb: (name: string, value: string) => void) => void, sanitize: (data: RequestResponseData) => RequestResponseData, sendMessage: (item: NetworkRequest) => void, isServiceUrl: (url: string) => boolean, tokenUrlMatcher?: (url: string) => boolean): typeof fetch;
 }

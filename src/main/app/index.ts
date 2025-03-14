@@ -122,9 +122,9 @@ export default class App {
   private readonly startCallbacks: Array<StartCallback> = []
   private readonly stopCallbacks: Array<() => any> = []
   private readonly commitCallbacks: Array<CommitCallback> = []
-  private readonly forceFlushCompletedCallbacks: Array<(success: boolean) => any> = []
   public readonly options: AppOptions
   public readonly networkOptions?: NetworkOptions
+  private readonly forceFlushCompletedCallbacks: Array<(success: boolean) => any> = []
   private readonly revID: string
   private activityState: ActivityState = ActivityState.NotActive
   private readonly version = 'TRACKER_VERSION' // TODO: version compatability check inside each plugin.
@@ -213,7 +213,11 @@ export default class App {
           this.stop(false)
           this._debug('worker_failed', data.reason)
         } else if (data.type === 'force_flush_completed') {
-          this.forceFlushCompletedCallbacks.forEach((cb) => {
+          // Create a copy of the callbacks array and clear the original
+          const callbacks = [...this.forceFlushCompletedCallbacks]
+          this.forceFlushCompletedCallbacks.length = 0
+          // Execute each callback with the success status
+          callbacks.forEach((cb) => {
             try {
               cb(data.success)
             } catch (e) {

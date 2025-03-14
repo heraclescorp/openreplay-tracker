@@ -267,3 +267,4 @@ class FetchProxy {
     }
 }
 exports.default = FetchProxy;
+FetchProxy.origFetch = fetch;

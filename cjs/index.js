@@ -162,7 +162,7 @@ class API {
             // no-cors issue only with text/plain or not-set Content-Type
             // req.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
             req.send(JSON.stringify({
-                trackerVersion: '9.0.11',
+                trackerVersion: '9.0.12',
                 projectKey: options.projectKey,
                 doNotTrack,
                 // TODO: add precise reason (an exact API missing)

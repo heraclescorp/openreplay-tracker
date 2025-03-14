@@ -17,7 +17,7 @@ export declare function SetInputTarget(id: number, label: string): Messages.SetI
 export declare function SetInputValue(id: number, value: string, mask: number): Messages.SetInputValue;
 export declare function SetInputChecked(id: number, checked: boolean): Messages.SetInputChecked;
 export declare function MouseMove(x: number, y: number): Messages.MouseMove;
-export declare function NetworkRequestDeprecated(type: string, method: string, url: string, request: string, response: string, status: number, timestamp: number, duration: number): Messages.NetworkRequestDeprecated;
+export declare function NetworkRequest(type: string, method: string, url: string, request: string, response: string, status: number, timestamp: number, duration: number): Messages.NetworkRequest;
 export declare function ConsoleLog(level: string, value: string): Messages.ConsoleLog;
 export declare function PageLoadTiming(requestStart: number, responseStart: number, responseEnd: number, domContentLoadedEventStart: number, domContentLoadedEventEnd: number, loadEventStart: number, loadEventEnd: number, firstPaint: number, firstContentfulPaint: number): Messages.PageLoadTiming;
 export declare function PageRenderTiming(speedIndex: number, visuallyComplete: number, timeToInteractive: number): Messages.PageRenderTiming;
@@ -61,7 +61,6 @@ export declare function JSException(name: string, message: string, payload: stri
 export declare function Zustand(mutation: string, state: string): Messages.Zustand;
 export declare function BatchMetadata(version: number, pageNo: number, firstIndex: number, timestamp: number, location: string): Messages.BatchMetadata;
 export declare function PartitionedMessage(partNo: number, partTotal: number): Messages.PartitionedMessage;
-export declare function NetworkRequest(type: string, method: string, url: string, request: string, response: string, status: number, timestamp: number, duration: number, transferredBodySize: number): Messages.NetworkRequest;
 export declare function InputChange(id: number, value: string, valueMasked: boolean, label: string, hesitationTime: number, inputDuration: number): Messages.InputChange;
 export declare function SelectionChange(selectionStart: number, selectionEnd: number, selection: string): Messages.SelectionChange;
 export declare function MouseThrashing(timestamp: number): Messages.MouseThrashing;

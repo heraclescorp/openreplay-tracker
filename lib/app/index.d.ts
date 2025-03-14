@@ -74,10 +74,9 @@ export default class App {
     private readonly startCallbacks;
     private readonly stopCallbacks;
     private readonly commitCallbacks;
-    private readonly notInitCallbacks;
-    private readonly forceFlushCompletedCallbacks;
     readonly options: AppOptions;
     readonly networkOptions?: NetworkOptions;
+    private readonly forceFlushCompletedCallbacks;
     private readonly revID;
     private activityState;
     private readonly version;

@@ -149,13 +149,12 @@ function default_1(app, opts = {}) {
                     if (!reqResInfo) {
                         return;
                     }
-                    app.send((0, messages_gen_js_1.NetworkRequest)('fetch', method, String(reqResInfo.url), stringify(reqResInfo.request), stringify(reqResInfo.response), r.status, startTime + (0, utils_js_1.getTimeOrigin)(), duration, 0));
+                    app.send((0, messages_gen_js_1.NetworkRequest)('fetch', method, String(reqResInfo.url), stringify(reqResInfo.request), stringify(reqResInfo.response), r.status, startTime + (0, utils_js_1.getTimeOrigin)(), duration));
                 })
                     .catch((e) => app.debug.error('Could not process Fetch response:', e));
                 return response;
             });
         };
-        // @ts-ignore
         context.fetch = trackFetch;
         /* ====== <> ====== */
         /* ====== XHR ====== */
@@ -200,7 +199,7 @@ function default_1(app, opts = {}) {
                 if (!reqResInfo) {
                     return;
                 }
-                app.send((0, messages_gen_js_1.NetworkRequest)('xhr', method, String(reqResInfo.url), stringify(reqResInfo.request), stringify(reqResInfo.response), xhr.status, startTime + (0, utils_js_1.getTimeOrigin)(), duration, 0));
+                app.send((0, messages_gen_js_1.NetworkRequest)('xhr', method, String(reqResInfo.url), stringify(reqResInfo.request), stringify(reqResInfo.response), xhr.status, startTime + (0, utils_js_1.getTimeOrigin)(), duration));
             }));
             //TODO: handle error (though it has no Error API nor any useful information)
             //xhr.addEventListener('error', (e) => {})

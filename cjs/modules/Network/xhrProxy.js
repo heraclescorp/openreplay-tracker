@@ -215,3 +215,4 @@ class XHRProxy {
     }
 }
 exports.default = XHRProxy;
+XHRProxy.origXMLHttpRequest = XMLHttpRequest;

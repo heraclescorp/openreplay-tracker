@@ -77,11 +77,16 @@ function default_1(app, opts) {
         if (resources !== null) {
             resources[entry.name] = entry.startTime + entry.duration;
         }
+        let shouldSkip = false;
         (_a = options.excludedResourceUrls) === null || _a === void 0 ? void 0 : _a.forEach((url) => {
             if (entry.name.startsWith(url)) {
+                shouldSkip = true;
                 return;
             }
         });
+        if (shouldSkip) {
+            return;
+        }
         app.send((0, messages_gen_js_1.ResourceTiming)(entry.startTime + (0, utils_js_1.getTimeOrigin)(), entry.duration, entry.responseStart && entry.startTime ? entry.responseStart - entry.startTime : 0, entry.transferSize > entry.encodedBodySize ? entry.transferSize - entry.encodedBodySize : 0, entry.encodedBodySize || 0, entry.decodedBodySize || 0, entry.name, entry.initiatorType, entry.transferSize, 
         // @ts-ignore
         (entry.responseStatus && entry.responseStatus === 304) || entry.transferSize === 0));
