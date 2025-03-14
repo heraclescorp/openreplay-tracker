@@ -27,7 +27,7 @@ export default class NetworkMessage {
         [key: string]: string;
     };
     responseType: XMLHttpRequest['responseType'];
-    requestType: 'xhr' | 'fetch' | 'ping' | 'custom' | 'beacon';
+    requestType: 'xhr' | 'fetch' | 'ping' | 'custom';
     requestHeader: HeadersInit;
     response: any;
     responseSize: number;

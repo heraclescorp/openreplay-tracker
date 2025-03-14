@@ -53,7 +53,7 @@ class NetworkMessage {
             request,
             response,
         });
-        return (0, messages_gen_js_1.NetworkRequest)(this.requestType, messageInfo.method, messageInfo.url, JSON.stringify(messageInfo.request), JSON.stringify(messageInfo.response), messageInfo.status, this.startTime + (0, utils_js_1.getTimeOrigin)(), this.duration, this.responseSize);
+        return (0, messages_gen_js_1.NetworkRequest)(this.requestType, messageInfo.method, messageInfo.url, JSON.stringify(messageInfo.request), JSON.stringify(messageInfo.response), messageInfo.status, this.startTime + (0, utils_js_1.getTimeOrigin)(), this.duration);
     }
     writeHeaders() {
         const reqHs = {};

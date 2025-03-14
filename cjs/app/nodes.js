@@ -79,7 +79,7 @@ class Nodes {
     clear() {
         for (let id = 0; id < this.nodes.length; id++) {
             const node = this.nodes[id];
-            if (!node) {
+            if (node === undefined) {
                 continue;
             }
             this.unregisterNode(node);

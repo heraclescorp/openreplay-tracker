@@ -67,7 +67,7 @@ function default_1(app, instance, opts, sanitize, stringify) {
         const requestStart = axiosResponseObj.config.__openreplay_timing;
         const duration = performance.now() - requestStart;
         app.debug.log('Openreplay: final req object', reqResInfo);
-        app.send((0, messages_gen_js_1.NetworkRequest)('xhr', String(method), String(reqResInfo.url), stringify(reqResInfo.request), stringify(reqResInfo.response), reqResInfo.status, requestStart + (0, utils_js_1.getTimeOrigin)(), duration, 0));
+        app.send((0, messages_gen_js_1.NetworkRequest)('xhr', String(method), String(reqResInfo.url), stringify(reqResInfo.request), stringify(reqResInfo.response), reqResInfo.status, requestStart + (0, utils_js_1.getTimeOrigin)(), duration));
     }
     function getStartTime(config) {
         app.debug.log('Openreplay: capturing API request', config);

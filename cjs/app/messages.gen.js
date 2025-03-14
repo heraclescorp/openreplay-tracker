@@ -2,8 +2,8 @@
 // Auto-generated, do not edit
 /* eslint-disable */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CSSInsertRuleURLBased = exports.CustomIssue = exports.TechnicalInfo = exports.SetCSSDataURLBased = exports.SetNodeAttributeURLBased = exports.LongTask = exports.SetNodeFocus = exports.LoadFontFace = exports.SetPageVisibility = exports.ConnectionInformation = exports.ResourceTimingDeprecated = exports.SetNodeAttributeDict = exports.StringDict = exports.PerformanceTrack = exports.GraphQL = exports.NgRx = exports.MobX = exports.Vuex = exports.Redux = exports.StateAction = exports.OTable = exports.Profiler = exports.Fetch = exports.CSSDeleteRule = exports.CSSInsertRule = exports.Metadata = exports.UserAnonymousID = exports.UserID = exports.CustomEvent = exports.PageRenderTiming = exports.PageLoadTiming = exports.ConsoleLog = exports.NetworkRequestDeprecated = exports.MouseMove = exports.SetInputChecked = exports.SetInputValue = exports.SetInputTarget = exports.SetNodeScroll = exports.SetNodeData = exports.RemoveNodeAttribute = exports.SetNodeAttribute = exports.RemoveNode = exports.MoveNode = exports.CreateTextNode = exports.CreateElementNode = exports.CreateDocument = exports.SetViewportScroll = exports.SetViewportSize = exports.SetPageLocation = exports.Timestamp = void 0;
-exports.TabData = exports.TabChange = exports.ResourceTiming = exports.UnbindNodes = exports.MouseThrashing = exports.SelectionChange = exports.InputChange = exports.NetworkRequest = exports.PartitionedMessage = exports.BatchMetadata = exports.Zustand = exports.JSException = exports.AdoptedSSRemoveOwner = exports.AdoptedSSAddOwner = exports.AdoptedSSDeleteRule = exports.AdoptedSSInsertRuleURLBased = exports.AdoptedSSReplaceURLBased = exports.CreateIFrameDocument = exports.MouseClick = void 0;
+exports.CSSInsertRuleURLBased = exports.CustomIssue = exports.TechnicalInfo = exports.SetCSSDataURLBased = exports.SetNodeAttributeURLBased = exports.LongTask = exports.SetNodeFocus = exports.LoadFontFace = exports.SetPageVisibility = exports.ConnectionInformation = exports.ResourceTimingDeprecated = exports.SetNodeAttributeDict = exports.StringDict = exports.PerformanceTrack = exports.GraphQL = exports.NgRx = exports.MobX = exports.Vuex = exports.Redux = exports.StateAction = exports.OTable = exports.Profiler = exports.Fetch = exports.CSSDeleteRule = exports.CSSInsertRule = exports.Metadata = exports.UserAnonymousID = exports.UserID = exports.CustomEvent = exports.PageRenderTiming = exports.PageLoadTiming = exports.ConsoleLog = exports.NetworkRequest = exports.MouseMove = exports.SetInputChecked = exports.SetInputValue = exports.SetInputTarget = exports.SetNodeScroll = exports.SetNodeData = exports.RemoveNodeAttribute = exports.SetNodeAttribute = exports.RemoveNode = exports.MoveNode = exports.CreateTextNode = exports.CreateElementNode = exports.CreateDocument = exports.SetViewportScroll = exports.SetViewportSize = exports.SetPageLocation = exports.Timestamp = void 0;
+exports.TabData = exports.TabChange = exports.ResourceTiming = exports.UnbindNodes = exports.MouseThrashing = exports.SelectionChange = exports.InputChange = exports.PartitionedMessage = exports.BatchMetadata = exports.Zustand = exports.JSException = exports.AdoptedSSRemoveOwner = exports.AdoptedSSAddOwner = exports.AdoptedSSDeleteRule = exports.AdoptedSSInsertRuleURLBased = exports.AdoptedSSReplaceURLBased = exports.CreateIFrameDocument = exports.MouseClick = void 0;
 function Timestamp(timestamp) {
     return [
         0 /* Messages.Type.Timestamp */,
@@ -145,9 +145,9 @@ function MouseMove(x, y) {
     ];
 }
 exports.MouseMove = MouseMove;
-function NetworkRequestDeprecated(type, method, url, request, response, status, timestamp, duration) {
+function NetworkRequest(type, method, url, request, response, status, timestamp, duration) {
     return [
-        21 /* Messages.Type.NetworkRequestDeprecated */,
+        21 /* Messages.Type.NetworkRequest */,
         type,
         method,
         url,
@@ -158,7 +158,7 @@ function NetworkRequestDeprecated(type, method, url, request, response, status, 
         duration,
     ];
 }
-exports.NetworkRequestDeprecated = NetworkRequestDeprecated;
+exports.NetworkRequest = NetworkRequest;
 function ConsoleLog(level, value) {
     return [
         22 /* Messages.Type.ConsoleLog */,
@@ -549,21 +549,6 @@ function PartitionedMessage(partNo, partTotal) {
     ];
 }
 exports.PartitionedMessage = PartitionedMessage;
-function NetworkRequest(type, method, url, request, response, status, timestamp, duration, transferredBodySize) {
-    return [
-        83 /* Messages.Type.NetworkRequest */,
-        type,
-        method,
-        url,
-        request,
-        response,
-        status,
-        timestamp,
-        duration,
-        transferredBodySize,
-    ];
-}
-exports.NetworkRequest = NetworkRequest;
 function InputChange(id, value, valueMasked, label, hesitationTime, inputDuration) {
     return [
         112 /* Messages.Type.InputChange */,

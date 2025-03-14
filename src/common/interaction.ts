@@ -34,7 +34,6 @@ type Failure = {
   type: 'failure'
   reason: string
 }
-
 type ForceFlushCompleted = {
   type: 'force_flush_completed'
   success: boolean

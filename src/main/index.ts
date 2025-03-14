@@ -254,7 +254,7 @@ export default class API {
     return this.app.session.getSessionHash()
   }
 
-  forceFlushBatch(callback?: (timedOut?: boolean) => any) {
+  forceFlushBatch(callback: (success: boolean) => any) {
     if (this.app === null) {
       return
     }
