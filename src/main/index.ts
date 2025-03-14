@@ -254,9 +254,12 @@ export default class API {
     return this.app.session.getSessionHash()
   }
 
-  forceFlushBatch() {
+  forceFlushBatch(callback: (success: boolean) => any) {
     if (this.app === null) {
       return
+    }
+    if (callback) {
+      this.app.attachForceFlushCompletedCallback(callback)
     }
     this.app.forceFlushBatch()
   }

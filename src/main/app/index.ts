@@ -124,6 +124,7 @@ export default class App {
   private readonly commitCallbacks: Array<CommitCallback> = []
   public readonly options: AppOptions
   public readonly networkOptions?: NetworkOptions
+  private readonly forceFlushCompletedCallbacks: Array<(success: boolean) => any> = []
   private readonly revID: string
   private activityState: ActivityState = ActivityState.NotActive
   private readonly version = 'TRACKER_VERSION' // TODO: version compatability check inside each plugin.
@@ -211,6 +212,18 @@ export default class App {
         } else if (data.type === 'failure') {
           this.stop(false)
           this._debug('worker_failed', data.reason)
+        } else if (data.type === 'force_flush_completed') {
+          // Create a copy of the callbacks array and clear the original
+          const callbacks = [...this.forceFlushCompletedCallbacks]
+          this.forceFlushCompletedCallbacks.length = 0
+          // Execute each callback with the success status
+          callbacks.forEach((cb) => {
+            try {
+              cb(data.success)
+            } catch (e) {
+              this._debug('force_flush_completed_callback_error', e)
+            }
+          })
         } else if (data.type === 'compress') {
           const batch = data.batch
           const batchSize = batch.byteLength
@@ -384,6 +397,13 @@ export default class App {
       cb = this.safe(cb)
     }
     this.stopCallbacks.push(cb)
+  }
+
+  attachForceFlushCompletedCallback(cb: (success: boolean) => any, useSafe = false): void {
+    if (useSafe) {
+      cb = this.safe(cb)
+    }
+    this.forceFlushCompletedCallbacks.push(cb)
   }
 
   // Use  app.nodes.attachNodeListener for registered nodes instead
