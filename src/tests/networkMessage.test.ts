@@ -46,7 +46,6 @@ describe('NetworkMessage', () => {
         // yeah
         result[7],
         500,
-        0,
       )
       expect(result).toBeDefined()
       expect(result).toEqual(expected)
