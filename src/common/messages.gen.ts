@@ -19,12 +19,11 @@ export declare const enum Type {
   SetInputValue = 18,
   SetInputChecked = 19,
   MouseMove = 20,
-  NetworkRequestDeprecated = 21,
+  NetworkRequest = 21,
   ConsoleLog = 22,
   PageLoadTiming = 23,
   PageRenderTiming = 24,
   CustomEvent = 27,
-  UserID = 28,
   UserAnonymousID = 29,
   Metadata = 30,
   CSSInsertRule = 37,
@@ -41,7 +40,7 @@ export declare const enum Type {
   PerformanceTrack = 49,
   StringDict = 50,
   SetNodeAttributeDict = 51,
-  ResourceTimingDeprecated = 53,
+  ResourceTimingDeprecatedDeprecated = 53,
   ConnectionInformation = 54,
   SetPageVisibility = 55,
   LoadFontFace = 57,
@@ -63,7 +62,6 @@ export declare const enum Type {
   Zustand = 79,
   BatchMetadata = 81,
   PartitionedMessage = 82,
-  NetworkRequest = 83,
   InputChange = 112,
   SelectionChange = 113,
   MouseThrashing = 114,
@@ -182,8 +180,8 @@ export type MouseMove = [
   /*y:*/ number,
 ]
 
-export type NetworkRequestDeprecated = [
-  /*type:*/ Type.NetworkRequestDeprecated,
+export type NetworkRequest = [
+  /*type:*/ Type.NetworkRequest,
   /*type:*/ string,
   /*method:*/ string,
   /*url:*/ string,
@@ -498,19 +496,6 @@ export type PartitionedMessage = [
   /*partTotal:*/ number,
 ]
 
-export type NetworkRequest = [
-  /*type:*/ Type.NetworkRequest,
-  /*type:*/ string,
-  /*method:*/ string,
-  /*url:*/ string,
-  /*request:*/ string,
-  /*response:*/ string,
-  /*status:*/ number,
-  /*timestamp:*/ number,
-  /*duration:*/ number,
-  /*transferredBodySize:*/ number,
-]
-
 export type InputChange = [
   /*type:*/ Type.InputChange,
   /*id:*/ number,
@@ -563,5 +548,5 @@ export type TabData = [
 ]
 
 
-type Message =  Timestamp | SetPageLocation | SetViewportSize | SetViewportScroll | CreateDocument | CreateElementNode | CreateTextNode | MoveNode | RemoveNode | SetNodeAttribute | RemoveNodeAttribute | SetNodeData | SetNodeScroll | SetInputTarget | SetInputValue | SetInputChecked | MouseMove | NetworkRequestDeprecated | ConsoleLog | PageLoadTiming | PageRenderTiming | CustomEvent | UserID | UserAnonymousID | Metadata | CSSInsertRule | CSSDeleteRule | Fetch | Profiler | OTable | StateAction | Redux | Vuex | MobX | NgRx | GraphQL | PerformanceTrack | StringDict | SetNodeAttributeDict | ResourceTimingDeprecated | ConnectionInformation | SetPageVisibility | LoadFontFace | SetNodeFocus | LongTask | SetNodeAttributeURLBased | SetCSSDataURLBased | TechnicalInfo | CustomIssue | CSSInsertRuleURLBased | MouseClick | CreateIFrameDocument | AdoptedSSReplaceURLBased | AdoptedSSInsertRuleURLBased | AdoptedSSDeleteRule | AdoptedSSAddOwner | AdoptedSSRemoveOwner | JSException | Zustand | BatchMetadata | PartitionedMessage | NetworkRequest | InputChange | SelectionChange | MouseThrashing | UnbindNodes | ResourceTiming | TabChange | TabData
+type Message =  Timestamp | SetPageLocation | SetViewportSize | SetViewportScroll | CreateDocument | CreateElementNode | CreateTextNode | MoveNode | RemoveNode | SetNodeAttribute | RemoveNodeAttribute | SetNodeData | SetNodeScroll | SetInputTarget | SetInputValue | SetInputChecked | MouseMove | NetworkRequest | ConsoleLog | PageLoadTiming | PageRenderTiming | CustomEvent | UserID | UserAnonymousID | Metadata | CSSInsertRule | CSSDeleteRule | Fetch | Profiler | OTable | StateAction | Redux | Vuex | MobX | NgRx | GraphQL | PerformanceTrack | StringDict | SetNodeAttributeDict | ResourceTimingDeprecated | ConnectionInformation | SetPageVisibility | LoadFontFace | SetNodeFocus | LongTask | SetNodeAttributeURLBased | SetCSSDataURLBased | TechnicalInfo | CustomIssue | CSSInsertRuleURLBased | MouseClick | CreateIFrameDocument | AdoptedSSReplaceURLBased | AdoptedSSInsertRuleURLBased | AdoptedSSDeleteRule | AdoptedSSAddOwner | AdoptedSSRemoveOwner | JSException | Zustand | BatchMetadata | PartitionedMessage | InputChange | SelectionChange | MouseThrashing | UnbindNodes | ResourceTiming | TabChange | TabData
 export default Message

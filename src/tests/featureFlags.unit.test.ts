@@ -72,6 +72,7 @@ describe('FeatureFlags', () => {
       userID: sessionInfo.userID,
       metadata: sessionInfo.metadata,
       referrer: '',
+      featureFlags: featureFlags.flags,
       os: 'test',
       device: 'test',
       country: 'test',

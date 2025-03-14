@@ -122,7 +122,6 @@ export default class App {
   private readonly startCallbacks: Array<StartCallback> = []
   private readonly stopCallbacks: Array<() => any> = []
   private readonly commitCallbacks: Array<CommitCallback> = []
-  private readonly notInitCallbacks: Array<() => any> = []
   private readonly forceFlushCompletedCallbacks: Array<(success: boolean) => any> = []
   public readonly options: AppOptions
   public readonly networkOptions?: NetworkOptions
@@ -574,7 +573,12 @@ export default class App {
     const sessionToken = this.session.getSessionToken()
     const isNewSession = needNewSessionID || !sessionToken
 
-    console.log('OpenReplay: starting session', needNewSessionID, sessionToken)
+    console.log(
+      'OpenReplay: starting session; need new session id?',
+      needNewSessionID,
+      'session token: ',
+      sessionToken,
+    )
     return window
       .fetch(this.options.ingestPoint + '/v1/web/start', {
         method: 'POST',

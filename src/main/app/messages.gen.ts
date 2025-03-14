@@ -204,7 +204,7 @@ export function MouseMove(
   ]
 }
 
-export function NetworkRequestDeprecated(
+export function NetworkRequest(
   type: string,
   method: string,
   url: string,
@@ -213,9 +213,9 @@ export function NetworkRequestDeprecated(
   status: number,
   timestamp: number,
   duration: number,
-): Messages.NetworkRequestDeprecated {
+): Messages.NetworkRequest {
   return [
-    Messages.Type.NetworkRequestDeprecated,
+    Messages.Type.NetworkRequest,
     type,
     method,
     url,
@@ -789,31 +789,6 @@ export function PartitionedMessage(
     Messages.Type.PartitionedMessage,
     partNo,
     partTotal,
-  ]
-}
-
-export function NetworkRequest(
-  type: string,
-  method: string,
-  url: string,
-  request: string,
-  response: string,
-  status: number,
-  timestamp: number,
-  duration: number,
-  transferredBodySize: number,
-): Messages.NetworkRequest {
-  return [
-    Messages.Type.NetworkRequest,
-    type,
-    method,
-    url,
-    request,
-    response,
-    status,
-    timestamp,
-    duration,
-    transferredBodySize,
   ]
 }
 
