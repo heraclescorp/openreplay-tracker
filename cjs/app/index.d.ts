@@ -56,6 +56,7 @@ type AppOptions = {
     disableStringDict?: boolean;
     onStart?: StartCallback;
     network?: NetworkOptions;
+    callOnFailureFunc?: () => void;
 } & WebworkerOptions & SessOptions;
 export type Options = AppOptions & ObserverOptions & SanitizerOptions;
 export declare const DEFAULT_INGEST_POINT = "https://api.openreplay.com/ingest";

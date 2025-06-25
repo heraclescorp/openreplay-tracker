@@ -90,6 +90,7 @@ type AppOptions = {
   // @deprecated
   onStart?: StartCallback
   network?: NetworkOptions
+  callOnFailureFunc?: () => void
 } & WebworkerOptions &
   SessOptions
 
@@ -161,6 +162,7 @@ export default class App {
         sessionStorage: null,
         disableStringDict: false,
         forceSingleTab: false,
+        callOnFailureFunc: undefined,
       },
       options,
     )
@@ -757,6 +759,9 @@ export default class App {
         }
       } finally {
         this.activityState = ActivityState.NotActive
+        if (this.options.callOnFailureFunc) {
+          this.options.callOnFailureFunc()
+        }
       }
     }
   }

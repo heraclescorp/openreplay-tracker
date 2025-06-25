@@ -27,6 +27,7 @@ export type Options = Partial<AppOptions & ConsoleOptions & ExceptionOptions & I
         onFlagsLoad?: (flags: IFeatureFlag[]) => void;
     };
     __DISABLE_SECURE_MODE?: boolean;
+    callOnFailureFunc?: () => void;
 };
 export default class API {
     private readonly options;

@@ -69,6 +69,7 @@ class App {
             sessionStorage: null,
             disableStringDict: false,
             forceSingleTab: false,
+            callOnFailureFunc: undefined,
         }, options);
         if (!this.options.forceSingleTab && globalThis && 'BroadcastChannel' in globalThis) {
             this.bc = (0, utils_js_1.inIframe)() ? null : new BroadcastChannel('rick');
@@ -579,6 +580,9 @@ class App {
             }
             finally {
                 this.activityState = ActivityState.NotActive;
+                if (this.options.callOnFailureFunc) {
+                    this.options.callOnFailureFunc();
+                }
             }
         }
     }

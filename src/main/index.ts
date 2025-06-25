@@ -59,6 +59,7 @@ export type Options = Partial<
   }
   // dev only
   __DISABLE_SECURE_MODE?: boolean
+  callOnFailureFunc?: () => void
 }
 
 const DOCS_SETUP = '/installation/javascript-sdk'
