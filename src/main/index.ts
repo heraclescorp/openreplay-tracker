@@ -302,7 +302,7 @@ export default class API {
     if (this.app === null) {
       return undefined
     }
-    const sessionURL = this.app.getSessionURL(options)
+    const sessionURL = this.getSessionURL(options)
     return sessionURL?.replace('/session/', '/assist/')
   }
 

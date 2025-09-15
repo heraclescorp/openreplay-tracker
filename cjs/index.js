@@ -255,7 +255,7 @@ class API {
         if (this.app === null) {
             return undefined;
         }
-        const sessionURL = this.app.getSessionURL(options);
+        const sessionURL = this.getSessionURL(options);
         return sessionURL === null || sessionURL === void 0 ? void 0 : sessionURL.replace('/session/', '/assist/');
     }
     setUserID(id) {
