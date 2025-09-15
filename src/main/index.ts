@@ -298,6 +298,14 @@ export default class API {
     return this.app.getSessionURL(options)
   }
 
+  getLiveSessionURL(options?: { withCurrentTime?: boolean }): string | undefined {
+    if (this.app === null) {
+      return undefined
+    }
+    const sessionURL = this.getSessionURL(options)
+    return sessionURL?.replace('/session/', '/assist/')
+  }
+
   setUserID(id: string): void {
     if (typeof id === 'string' && this.app !== null) {
       this.app.session.setUserID(id)

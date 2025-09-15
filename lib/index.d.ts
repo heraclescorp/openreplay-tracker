@@ -52,6 +52,9 @@ export default class API {
     getSessionURL(options?: {
         withCurrentTime?: boolean;
     }): string | undefined;
+    getLiveSessionURL(options?: {
+        withCurrentTime?: boolean;
+    }): string | undefined;
     setUserID(id: string): void;
     userID(id: string): void;
     setUserAnonymousID(id: string): void;
