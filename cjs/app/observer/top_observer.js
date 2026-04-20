@@ -8,6 +8,24 @@ const iframe_offsets_js_1 = require("./iframe_offsets.js");
 const messages_gen_js_1 = require("../messages.gen.js");
 const utils_js_1 = require("../../utils.js");
 const attachShadowNativeFn = utils_js_1.IN_BROWSER ? Element.prototype.attachShadow : () => new ShadowRoot();
+function isHostnameAllowed(iframe, allowed) {
+    if (allowed.length === 0)
+        return false;
+    const src = iframe.src;
+    if (!src)
+        return false;
+    let host;
+    try {
+        const url = new URL(src);
+        if (url.protocol !== 'https:' && url.protocol !== 'http:')
+            return false;
+        host = url.hostname.toLowerCase();
+    }
+    catch (_a) {
+        return false;
+    }
+    return allowed.some((d) => d.toLowerCase() === host);
+}
 class TopObserver extends observer_js_1.default {
     constructor(app, options) {
         super(app, true);
@@ -18,15 +36,23 @@ class TopObserver extends observer_js_1.default {
         this.iframeObservers = [];
         this.shadowRootObservers = [];
         this.options = Object.assign({
-            captureIFrames: true,
+            captureIFrames: false,
+            allowedIframeDomains: [],
         }, options);
-        // IFrames
+        // IFrames — capture requires both the global switch and an explicit
+        // hostname allowlist match. The data-openreplay-capture attribute is
+        // still an opt-in escape hatch for per-node capture, but it cannot
+        // bypass the domain allowlist.
         this.app.nodes.attachNodeCallback((node) => {
-            if ((0, guards_js_1.hasTag)(node, 'iframe') &&
-                ((this.options.captureIFrames && !(0, utils_js_1.hasOpenreplayAttribute)(node, 'obscured')) ||
-                    (0, utils_js_1.hasOpenreplayAttribute)(node, 'capture'))) {
-                this.handleIframe(node);
-            }
+            if (!(0, guards_js_1.hasTag)(node, 'iframe'))
+                return;
+            if ((0, utils_js_1.hasOpenreplayAttribute)(node, 'obscured'))
+                return;
+            if (!isHostnameAllowed(node, this.options.allowedIframeDomains))
+                return;
+            if (!this.options.captureIFrames && !(0, utils_js_1.hasOpenreplayAttribute)(node, 'capture'))
+                return;
+            this.handleIframe(node);
         });
         // ShadowDOM
         this.app.nodes.attachNodeCallback((node) => {

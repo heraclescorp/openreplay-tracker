@@ -12,12 +12,36 @@ import { IN_BROWSER, hasOpenreplayAttribute, canAccessIframe } from '../../utils
 
 export interface Options {
   captureIFrames: boolean
+  /**
+   * Exact hostnames whose iframes may be captured. Required when
+   * captureIFrames is true — omitting it (or passing an empty array)
+   * disables iframe capture entirely. Hostname comparison is
+   * case-insensitive and matched against the iframe's resolved src.
+   * Iframes without a parseable http(s) src (empty, about:blank,
+   * javascript:, data:) are never captured.
+   */
+  allowedIframeDomains: string[]
 }
 
 type Context = Window & typeof globalThis
 type ContextCallback = (context: Context) => void
 
 const attachShadowNativeFn = IN_BROWSER ? Element.prototype.attachShadow : () => new ShadowRoot()
+
+function isHostnameAllowed(iframe: HTMLIFrameElement, allowed: string[]): boolean {
+  if (allowed.length === 0) return false
+  const src = iframe.src
+  if (!src) return false
+  let host: string
+  try {
+    const url = new URL(src)
+    if (url.protocol !== 'https:' && url.protocol !== 'http:') return false
+    host = url.hostname.toLowerCase()
+  } catch {
+    return false
+  }
+  return allowed.some((d) => d.toLowerCase() === host)
+}
 
 export default class TopObserver extends Observer {
   private readonly options: Options
@@ -27,20 +51,22 @@ export default class TopObserver extends Observer {
     super(app, true)
     this.options = Object.assign(
       {
-        captureIFrames: true,
+        captureIFrames: false,
+        allowedIframeDomains: [],
       },
       options,
     )
 
-    // IFrames
+    // IFrames — capture requires both the global switch and an explicit
+    // hostname allowlist match. The data-openreplay-capture attribute is
+    // still an opt-in escape hatch for per-node capture, but it cannot
+    // bypass the domain allowlist.
     this.app.nodes.attachNodeCallback((node) => {
-      if (
-        hasTag(node, 'iframe') &&
-        ((this.options.captureIFrames && !hasOpenreplayAttribute(node, 'obscured')) ||
-          hasOpenreplayAttribute(node, 'capture'))
-      ) {
-        this.handleIframe(node)
-      }
+      if (!hasTag(node, 'iframe')) return
+      if (hasOpenreplayAttribute(node, 'obscured')) return
+      if (!isHostnameAllowed(node, this.options.allowedIframeDomains)) return
+      if (!this.options.captureIFrames && !hasOpenreplayAttribute(node, 'capture')) return
+      this.handleIframe(node)
     })
 
     // ShadowDOM
