@@ -40,7 +40,7 @@ class App {
         this.commitCallbacks = [];
         this.forceFlushCompletedCallbacks = [];
         this.activityState = ActivityState.NotActive;
-        this.version = '9.0.12'; // TODO: version compatability check inside each plugin.
+        this.version = '9.0.13'; // TODO: version compatability check inside each plugin.
         this.compressionThreshold = 24 * 1000;
         this.restartAttempts = 0;
         this.bc = null;

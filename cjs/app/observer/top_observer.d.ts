@@ -3,6 +3,15 @@ import { Offset } from './iframe_offsets.js';
 import App from '../index.js';
 export interface Options {
     captureIFrames: boolean;
+    /**
+     * Exact hostnames whose iframes may be captured. Required when
+     * captureIFrames is true — omitting it (or passing an empty array)
+     * disables iframe capture entirely. Hostname comparison is
+     * case-insensitive and matched against the iframe's resolved src.
+     * Iframes without a parseable http(s) src (empty, about:blank,
+     * javascript:, data:) are never captured.
+     */
+    allowedIframeDomains: string[];
 }
 type Context = Window & typeof globalThis;
 type ContextCallback = (context: Context) => void;

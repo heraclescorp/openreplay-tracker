@@ -1,3 +1,7 @@
+# 9.0.13 (heracles)
+
+- **Breaking:** iframe capture is now opt-in per hostname. Added required `allowedIframeDomains: string[]` option paired with `captureIFrames` — iframes are only captured when their resolved `src` hostname matches the allowlist. `captureIFrames` default flipped from `true` to `false`. `data-openreplay-capture` still enables per-node opt-in but remains gated by the allowlist. Iframes with empty, `about:blank`, `javascript:`, or `data:` src are never captured.
+
 # 9.0.11
 
 - new `resetTabOnWindowOpen` option to fix window.open issue with sessionStorage being inherited (replicating tabId bug), users still should use 'noopener=true' in window.open to prevent it in general...
