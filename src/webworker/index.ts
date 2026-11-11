@@ -58,7 +58,10 @@ function reset(): void {
   resetWriter()
   resetSender()
   setTimeout(() => {
-    workerStatus = WorkerStatus.NotActive
+    // an explicit 'stop' stays Stopped until the next 'start', so a batch compressed after it is dropped instead of restarting into a new session
+    if (workerStatus === WorkerStatus.Stopping) {
+      workerStatus = WorkerStatus.NotActive
+    }
   }, 100)
 }
 
