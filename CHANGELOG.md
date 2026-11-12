@@ -1,5 +1,6 @@
 # 9.0.13 (heracles)
 
+- Fix: a batch that comes back from main-thread compression after an explicit `stop()` is dropped instead of making the worker post `restart`, which forced a new session id on the next start. Genuine restarts (401, batch for a worker that was never started, hidden-page timeout while running) are unchanged.
 - **Breaking:** iframe capture is now opt-in per hostname. Added required `allowedIframeDomains: string[]` option paired with `captureIFrames` — iframes are only captured when their resolved `src` hostname matches the allowlist. `captureIFrames` default flipped from `true` to `false`. `data-openreplay-capture` still enables per-node opt-in but remains gated by the allowlist. Iframes with empty, `about:blank`, `javascript:`, or `data:` src are never captured.
 
 # 9.0.11
